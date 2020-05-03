@@ -89,14 +89,14 @@ async def on_message(message):
     if str(message.content).upper() == ("*TEST"):
         em = discord.Embed(colour = 3447033)
         em.set_author(name="Test Complete")
-        await client.send(message.channel, embed = em)
+        await message.channel.send(message.channel, embed = em)
 
     if str(message.content).upper() == ("*LEAVE"):
          if message.author.id==CREATOR_ID:
             await client.voice_client_in(message.guild).disconnect()
             em = discord.Embed(colour=3447003)
             em.set_author(name="Hal has been disconnect from the voice channel")
-            await client.send(message.channel, embed=em)
+            await message.channel.send(message.channel, embed=em)
 
     if str(message.content).upper().upper()==("*MOVE"):
         if message.author.id!=CREATOR_ID:
@@ -107,7 +107,7 @@ async def on_message(message):
             await client.move_member(user,channel)
             em = discord.Embed(colour=3447003)
             em.set_author(name = "Hal Has moved channels" + "\n" + "Note: If Hal Moves During A Song, The Song Will Stop Playing ")
-            await client.send(message.channel, embed=em)
+            await message.channel.send(message.channel, embed=em)
 
     if str(message.content).upper().startswith("*VOLUME|"):
         Player.volume
@@ -115,12 +115,13 @@ async def on_message(message):
         Player.volume=total/100
         em = discord.Embed(colour=3447003)
         em.set_author(name="Music Volume has been changed to {0}".format(str(total))+"%." )
+        await message.channel.send(message.channel, embed=em)
             
      
     if str(message.content).upper().startswith("*PLAY|"):
         
         if Player!=None:
-            if is_playing():
+            if message.guild.voice_client.is_playing():
                 Player.stop()
         try:
             query_string = urllib.parse.urlencode({"search_query" : str(message.content).split('|')[1]})
@@ -136,7 +137,7 @@ async def on_message(message):
                 em = discord.Embed(title=" Playing: " + Player.title, description=('Volume:  {0}'.format(str(Player.volume*100))+"%." + 'Duration: '+str(int(round(Player.duration/60)))+(' Minutes \nLink: '+ link)), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 em.set_footer(text="Hal | {:%b,%d %Y}".format(today))
-                await client.send(message.channel, embed=em)
+                await message.channel.send(message.channel, embed=em)
             else:
                 channel=message.author.voice.channel
                 try:
@@ -149,17 +150,15 @@ async def on_message(message):
                 em = discord.Embed(title=" Playing: " + Player.title, description=('Volume:  {0}'.format(int(Player.volume*100))+"%." + "\n" + 'Duration: '+str(int(round(Player.duration/60)))+(' Minutes \nLink: '+ link)), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
-                await client.send(message.channel, embed=em)
+                await message.channel.send(message.channel, embed=em)
         except IndexError:
             await message.channel.send ("Could not find this video on YouTube.")
             if(player.is_playing == False):
                 em= discord.Embed(description = Player.title +link+ "\n" + "**Song Has Ended**", colour = 3447003)
                 em.set_author(name = "Music", icon_url=message.author.avatar_url)
-                await client.send(message.channel, embed=em)
+                await message.channel.send(message.channel, embed=em)
                                   
 
 
    
 client.loop.run_until_complete(client.start(TokenDoc.token))
-
-
