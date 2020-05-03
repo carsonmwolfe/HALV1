@@ -93,7 +93,7 @@ class music_handler():
         while self.is_playing:
             if self.player.is_playing():
                 self.is_playing=True
-            elif self.player.is_playing==False and self.paused==True:
+            elif self.player.is_playing==False and self.paused==False:
                 self.is_playing=False
             import datetime
             queuelist="\nNo songs in queue"
@@ -211,11 +211,11 @@ async def on_message(message):
         await message.channel.send(message.channel, embed = em)
 
     if str(message.content).upper() == ("*LEAVE"):
-         if message.author.id==CREATOR_ID:
-            await client.voice_client_in(message.guild).disconnect()
-            em = discord.Embed(colour=3447003)
-            em.set_author(name="Hal has been disconnect from the voice channel")
-            await message.channel.send(message.channel, embed=em)
+        await message.guild.voice_client.disconnect()
+        em = discord.Embed(colour=3447003)
+        em.set_author(name="Hal has been disconnect from the voice channel")
+        Player = None
+        await message.channel.send(message.channel, embed=em)
 
     if str(message.content).upper().upper()==("*MOVE"):
         await Member.edit()(user,channel)
@@ -230,13 +230,12 @@ async def on_message(message):
         em = discord.Embed(colour=3447003)
         em.set_author(name="Music Volume has been changed to {0}".format(str(total))+"%." )
         await message.channel.send(message.channel, embed=em)
-            
-     
-    if str(message.content).upper().startswith("*PLAY|"):
         
+    if str(message.content).upper().startswith("*PLAY|"):
+       
         if Player!=None:
             if message.guild.voice_client.is_playing():
-                Player.stop()
+                message.guild.voice_client.stop()
         try:
             query_string = urllib.parse.urlencode({"search_query" : str(message.content).split('|')[1]})
             req = urllib.request.Request("http://www.youtube.com/results?" + query_string)
@@ -244,33 +243,37 @@ async def on_message(message):
                 searchresults = re.findall(r'href=\"\/watch\?v=(.{11})', html.read().decode())
                 link = ("http://www.youtube.com/watch?v=" + searchresults[0])        
             if message.guild.voice_client == None:
+                Player = await YTDLSource.from_url(link,loop = client.loop)
                 channel=message.author.voice.channel
                 await channel.connect()
-                await message.guild.voice_client.play(Player)
-                Player = await YTDLSource.from_url(link,loop = asyncio.get_event_loop())
-                em = discord.Embed(title=" Playing: " + Player.title, description=('Volume:  {0}'.format(str(Player.volume*100))+"%." + 'Duration: '+str(int(round(Player.duration/60)))+(' Minutes \nLink: '+ link)), colour=3447003)
+                while message.guild.voice_client == None:
+                    await message.guild.voice_client.play(Player)
+                Player = await YTDLSource.from_url(link,loop = client.loop)
+                em = discord.Embed(title=" Playing: " + Player.title, description=('Volume:  {0}'.format(str(Player.volume*100))+"%." +"\n" +  'Duration: '+str(int(round(Player.duration/60)))+(' Minutes \nLink: '+ link)), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
-                em.set_footer(text="Hal | {:%b,%d %Y}".format(today))
+                em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
                 await message.channel.send(message.channel, embed=em)
-                await message.guild.voice_client.play(Player)
+                message.guild.voice_client.play(Player)
             else:
                 channel=message.author.voice.channel
                 try:
-                    Player = await YTDLSource.from_url(link,loop = asyncio.get_event_loop())
-                except:
+                    Player = await YTDLSource.from_url(link,loop = client.loop)
+                except exception as e:
+                    print (e)
                     channel=message.author.voice.channel
                     await channel.connect()
-                    Player = await YTDLSource.from_url(link,loop = asyncio.get_event_loop())
-                await message.guild.voice_client.play(Player)
+                    Player = await YTDLSource.from_url(link,loop = client.loop)
+                message.guild.voice_client.play(Player)
                 em = discord.Embed(title=" Playing: " + Player.title, description=('Volume:  {0}'.format(int(Player.volume*100))+"%." + "\n" + 'Duration: '+str(int(round(Player.duration/60)))+(' Minutes \nLink: '+ link)), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
                 await message.channel.send(message.channel, embed=em)
         except IndexError:
             await message.channel.send ("Could not find this video on YouTube.")
-            if(player.is_playing == False):
+            if(Player.is_playing == False):
                 em= discord.Embed(description = Player.title +link+ "\n" + "**Song Has Ended**", colour = 3447003)
                 em.set_author(name = "Music", icon_url=message.author.avatar_url)
                 await message.channel.send(message.channel, embed=em)
+
                                   
 client.loop.run_until_complete(client.start(TokenDoc.token))
