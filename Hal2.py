@@ -14,7 +14,16 @@ import urllib
 import datetime
 import asyncio
 
-print("Hal is online")
+print("Hal is Booting up...")
+
+#uration_in_s = duration.total_seconds()
+#days = divmod(duration_in_s, 86400)
+#hours = divmod(days[1],3600)
+#minutes = divmod(hour[1], 60)
+#seconds = divmod(minutes[1], 1)
+
+Startup = datetime.datetime.now()
+
 
 CREATOR_ID=653386075095695361
 HAL_ID=663923530626367509
@@ -29,7 +38,6 @@ Player = None
 Memberinfo = []
 Blocked=[]
 Voice=[]
-START_TIME = datetime.datetime.now()
 profooter=""
 EMBEDCOLOR = 3447033
 DARK_NAVY = 2899536
@@ -49,7 +57,6 @@ ffmpeg_options = {
       
         
 class YTDLSource(discord.PCMVolumeTransformer):
-
     def __init__(MS,source,*,data,volume=1.0):
         super().__init__(source, volume)
 
@@ -57,21 +64,16 @@ class YTDLSource(discord.PCMVolumeTransformer):
         MS.title = data.get('title')
         MS.duration = data.get('duration')
         MS.is_live = False
-
     @classmethod
     async def from_url(cls,url,*,loop=None,stream=False):
         loop = loop
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = not stream))
         cls.url = url
-
         if 'entries' in data:
             data = data['entries'][0]
 
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data = data)
-    
-
-
 
 today = datetime.date.today()
 now = datetime.datetime.now()
@@ -92,13 +94,8 @@ async def on_message(message):
     global Execute_Order_66
     Volume = 1.0
     import datetime
-
-    
-    
     user = message.guild.get_member(HAL_ID)
     channel = message.author.voice.channel
-    
-    
     if str(message.content).upper() == ("*TEST"):
         em = discord.Embed(colour = 3447033)
         em.set_author(name="Test Complete")
@@ -121,7 +118,8 @@ async def on_message(message):
             client.loop.run_until_complete(client.logout())
             os.system("python3 /home/pi/Hal.py")
             #os.system("C:\Users\cmwol\Desktop\__pycache__\python\HAL")
-            raise SystemExit    
+            raise SystemExit
+            
 
     if str(message.content).upper().upper()==("*MOVE"):
         await user.edit(voice_channel = channel)
@@ -138,33 +136,22 @@ async def on_message(message):
         Volume = total
         await message.channel.send(embed=em)
 
+    if str(message.content).upper() == ("*STATUS"):
+        em = discord.Embed(title="Status Update" , description=("Number of Fatal Errors: 0" + "\n" + "Last Restarted: " + str(Startup - datetime.datetime.now()) + " ago"), colour=3447003)
+        em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
+        em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
+        await message.channel.send( embed=em)
 
+                                                                
 
-
-    Execute_Order_66 = True
-    
-    if str(message.content).upper() == ("*HALT"):
-            Execute_Order_66 = False
-
-    if str(message.content).upper() == ("*EXECUTE ORDER 66"):
-        await channel.connect()
-        await message.channel.send( "<:evillightsaber:706727875138551828>" + "<:vader:706614988046991421>" )
-        time.sleep(1)
-        while Execute_Order_66: 
-            await message.channel.send ("<:clonetrooperhelmetpng5:706728426371022938>" + "<:clonetrooperhelmetpng5:706728426371022938>"+ "<:clonetrooperhelmetpng5:706728426371022938>"+ "<:clonetrooperhelmetpng5:706728426371022938>"+ "<:clonetrooperhelmetpng5:706728426371022938>"+ "<:clonetrooperhelmetpng5:706728426371022938>" + "<:clonetrooperhelmetpng5:706728426371022938>"  + "<:clonetrooperhelmetpng5:706728426371022938>" )
-            time.sleep(1)
-        
-        
-            
-
-    if str(message.content).upper()=='*HELP':
-
+    if str(message.content).upper()=='*MUSIC':
         misc=[]
         musc=[]
         OO=[]
-
+        musicinfo=[]
         em = discord.Embed(title='Help',description="** *HelpCommands for command-specific information**",colour=DARK_NAVY)
-        em.add_field(name="Miscellaneous", value="```"+ "*Test" + "\n" + "*Help" + "\n".join(misc)+"```")
+        em.add_field(name="Miscellaneous", value="```"+ "*Test" + "\n" + "*Help" + "\n".join(misc) + "```")
+        #em.add_field(name ="Music Info", value = "``" + "Name of Song/Video, Youtube Links, Soundcloud links, Spotify Links." + "``" +"\n".join(musicinfo))
         em.add_field(name="Music", value ="```"+"*Play|" + "\n" + "*Volume" + "\n"+ "*Resume" + "\n" + "*Pause" + "\n" + "*Move" + "\n" + "*Skip" + "\n" .join(musc) + "```")
         em.add_field(name="Owner Only", value="```"+ "*Restart" +"\n"+ "*Leave"  + "\n" .join(OO)+"```")
         em.set_footer(text="Hal | {:%b,%d %Y}".format(today))
@@ -193,7 +180,7 @@ async def on_message(message):
                 while message.guild.voice_client == None:
                     await message.guild.voice_client.play(Player)
                 Player = await YTDLSource.from_url(link,loop = client.loop)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  + str(round(Player.duration/60)) +  ' Minutes' + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + str(Volume) +"%." + "``" + "\n"+ "``" + "!Music For Full List Of Commands " + '``'), colour=3447003)
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  + str(round(Player.duration/60)) +  ' Minutes' + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + str(Volume) +"%." + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
                 
@@ -208,7 +195,7 @@ async def on_message(message):
                     await channel.connect()
                     Player = await YTDLSource.from_url(link,loop = client.loop)
                 message.guild.voice_client.play(Player)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(round(Player.duration/60)) + ' Minutes' + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + str(Volume) + "%." + "``" + "\n" + "``" + "!Music For Full List Of Commands " + '``'), colour=3447003)
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(round(Player.duration/60)) + ' Minutes' + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + str(Volume) + "%." + "``"  + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
                 await message.channel.send(embed=em)                
