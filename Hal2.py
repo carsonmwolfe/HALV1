@@ -124,8 +124,7 @@ async def on_message(message):
             client.loop.run_until_complete(client.logout())
             os.system("python3 /home/pi/Hal.py")
             #os.system("C:\Users\cmwol\Desktop\__pycache__\python\HAL")
-            raise SystemExit
-            
+            raise SystemExit     
 
     if str(message.content).upper().upper()==("*MOVE"):
         await user.edit(voice_channel = channel)
@@ -145,21 +144,23 @@ async def on_message(message):
             em = discord.Embed(colour=3447003)
             em.set_author(name = "Hal Is Not In A Voice Channel")
             await message.channel.send(embed=em)
-
         if Player != None:
             Vol = Player.volume
             total= int(str(message.content).split('|')[1])
             Vol=total/100
             print ("volume" + str(Vol))
             print ("total" + str(total))
-            if (total < 200 or total > 0):
+            if (total < 200 and total > 0):
                 em = discord.Embed(colour=3447003)
                 em.set_author(name="Music Volume has been changed to {0}".format(str(total))+"%." )
                 Volume = total
                 await message.channel.send(embed=em)
-
-                                                                
-
+            if (total > 201 or total < 0):
+                em = discord.Embed(colour=3447003)
+                em.set_author(name="Volume Number Invalid")
+                await message.channel.send(embed=em)
+            
+                                                        
     if str(message.content).upper()=='*MUSIC':
         misc=[]
         musc=[]
@@ -190,6 +191,7 @@ async def on_message(message):
                 url = (link)
                 video = pafy.new(url)
                 v_min, v_sec = divmod(video.length,60)
+                
             if message.guild.voice_client == None:
                 Player = await YTDLSource.from_url(link,loop = client.loop)
                 channel=message.author.voice.channel
@@ -209,7 +211,7 @@ async def on_message(message):
                     AMPM = "PM"
                     hour = hour -12
                 
-                em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + "at" + str(hour) + str(now.minute) + AMPM)
+                em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
                 await message.channel.send(embed=em)
                 message.guild.voice_client.play(Player)
             else:
@@ -227,12 +229,12 @@ async def on_message(message):
                 AMPM = ""
                 hour = now.hour
                 if now.hour < 13:
-                    AMPM = "AM"
+                    AMPM = "am"
                 else:
-                    AMPM = "PM"
+                    AMPM = "pm"
                     hour = hour -12
                 
-                em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + "at" + str(hour) + str(now.minute) + AMPM)
+                em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +str(now.minute) + AMPM)
                 await message.channel.send(message.channel,embed=em) 
       
         except IndexError:
@@ -255,8 +257,6 @@ async def on_message(message):
             while message.guild.voice_client == None:
                 await message.guild.voice_client.play(Player)
 
-    
-            
 
     if str(message.content).upper().upper() == ("*SKIP"):
         if message.author.id == MusicAuthorID:
