@@ -13,7 +13,7 @@ import random
 import urllib
 import datetime
 import asyncio
-
+import pafy
 print("Hal is Booting up...")
 
 #uration_in_s = duration.total_seconds()
@@ -83,7 +83,7 @@ now = datetime.datetime.now()
 async def on_ready():
     await client.change_presence(activity=discord.Game(name="Rewrite is superior", type = 1, url="https://www.youtube.com/watch?v=NiUmFQY3LNA"))
 
-
+   
 @client.event
 async def on_message(message):
     global Player
@@ -92,10 +92,16 @@ async def on_message(message):
     global Volume
     global MusicMSG
     global Execute_Order_66
+    global repeat
     Volume = 1.0
     import datetime
+
+
+    
+
     user = message.guild.get_member(HAL_ID)
     channel = message.author.voice.channel
+    
     if str(message.content).upper() == ("*TEST"):
         em = discord.Embed(colour = 3447033)
         em.set_author(name="Test Complete")
@@ -126,21 +132,31 @@ async def on_message(message):
         em = discord.Embed(colour=3447003)
         em.set_author(name = "Hal Has moved channels")
         await message.channel.send(embed=em)
-
-    if str(message.content).upper().startswith("*VOLUME|"):
-        Player.volume
-        total= int(str(message.content).split('|')[1])
-        Player.volume=total/100
-        em = discord.Embed(colour=3447003)
-        em.set_author(name="Music Volume has been changed to {0}".format(str(total))+"%." )
-        Volume = total
-        await message.channel.send(embed=em)
+        
 
     if str(message.content).upper() == ("*STATUS"):
         em = discord.Embed(title="Status Update" , description=("Number of Fatal Errors: 0" + "\n" + "Last Restarted: " + str(Startup - datetime.datetime.now()) + " ago"), colour=3447003)
         em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
         em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
         await message.channel.send( embed=em)
+
+    if str(message.content).upper().startswith("*VOLUME|"):        
+        if Player == None:
+            em = discord.Embed(colour=3447003)
+            em.set_author(name = "Hal Is Not In A Voice Channel")
+            await message.channel.send(embed=em)
+
+        if Player != None:
+            Vol = Player.volume
+            total= int(str(message.content).split('|')[1])
+            Vol=total/100
+            print ("volume" + str(Vol))
+            print ("total" + str(total))
+            if (total < 200 or total > 0):
+                em = discord.Embed(colour=3447003)
+                em.set_author(name="Music Volume has been changed to {0}".format(str(total))+"%." )
+                Volume = total
+                await message.channel.send(embed=em)
 
                                                                 
 
@@ -158,7 +174,6 @@ async def on_message(message):
         await message.channel.send(embed=em)
     
     if str(message.content).upper().startswith("*PLAY|"):
-        
         if Player!=None:
             if message.guild.voice_client.is_playing():
                 em = discord.Embed(colour = 3447033)
@@ -171,7 +186,10 @@ async def on_message(message):
             req = urllib.request.Request("http://www.youtube.com/results?" + query_string)
             with urllib.request.urlopen(req) as html:
                 searchresults = re.findall(r'href=\"\/watch\?v=(.{11})', html.read().decode())
-                link = ("http://www.youtube.com/watch?v=" + searchresults[0])        
+                link = ("http://www.youtube.com/watch?v=" + searchresults[0])
+                url = (link)
+                video = pafy.new(url)
+                v_min, v_sec = divmod(video.length,60)
             if message.guild.voice_client == None:
                 Player = await YTDLSource.from_url(link,loop = client.loop)
                 channel=message.author.voice.channel
@@ -180,11 +198,19 @@ async def on_message(message):
                 while message.guild.voice_client == None:
                     await message.guild.voice_client.play(Player)
                 Player = await YTDLSource.from_url(link,loop = client.loop)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  + str(round(Player.duration/60)) +  ' Minutes' + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + str(Volume) +"%." + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  + str(v_min) + ":" + str(v_sec) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
-                em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
+                now = datetime.datetime.now()
+                AMPM = ""
+                hour = now.hour
+                if now.hour < 13:
+                    AMPM = "AM"
+                else:
+                    AMPM = "PM"
+                    hour = hour -12
                 
-                await message.channel.send( embed=em)
+                em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + "at" + str(hour) + str(now.minute) + AMPM)
+                await message.channel.send(embed=em)
                 message.guild.voice_client.play(Player)
             else:
                 channel=message.author.voice.channel
@@ -195,16 +221,42 @@ async def on_message(message):
                     await channel.connect()
                     Player = await YTDLSource.from_url(link,loop = client.loop)
                 message.guild.voice_client.play(Player)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(round(Player.duration/60)) + ' Minutes' + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + str(Volume) + "%." + "``"  + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(v_min) + ":" + str(v_sec)+ "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``"  + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
-                em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
-                await message.channel.send(embed=em)                
+                now = datetime.datetime.now()
+                AMPM = ""
+                hour = now.hour
+                if now.hour < 13:
+                    AMPM = "AM"
+                else:
+                    AMPM = "PM"
+                    hour = hour -12
+                
+                em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + "at" + str(hour) + str(now.minute) + AMPM)
+                await message.channel.send(message.channel,embed=em) 
+      
         except IndexError:
             await message.channel.send ("Could not find this video on YouTube.")
             if(Player.is_playing == False):
                 em= discord.Embed(description = Player.title +link+ "\n" + "**Song Has Ended**", colour = 3447003)
                 em.set_author(name = "Music", icon_url=message.author.avatar_url)
                 await message.channel.send(embed=em)
+
+    if str(message.content).upper().upper() == ("*REPEAT"):
+        if Player!=None:
+            if message.guild.voice_client.is_playing():
+                em = discord.Embed(colour = 3447033)
+                em.set_author(name="Song In Progress! Once the song is done you can play your song. ")
+                em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
+                await message.channel.send(embed = em)
+        if Player == None:
+            channel = message.author.voice.channel
+            await channel.connect()
+            while message.guild.voice_client == None:
+                await message.guild.voice_client.play(Player)
+
+    
+            
 
     if str(message.content).upper().upper() == ("*SKIP"):
         if message.author.id == MusicAuthorID:
