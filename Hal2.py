@@ -58,12 +58,13 @@ class YTDLSource(discord.PCMVolumeTransformer):
         MS.is_live = False
     @classmethod
     async def from_url(cls,url,*,loop=None,stream=False):
-        loop = loop
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = False))
+        if data.get('duration')==0 or data.get('duration')>3600:
+            stream=True
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = not stream))
         cls.url = url
         if 'entries' in data:
             data = data['entries'][0]
-
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data = data)
 
@@ -90,7 +91,12 @@ async def on_message(message):
     Count = 0
 
     user = message.guild.get_member(HAL_ID)
-    channel = message.author.voice.channel
+    channel = None
+    try:
+        channel = message.author.voice.channel
+    except:
+        print("Author not in voice channel")
+        
     
     if str(message.content).upper() == ("*TEST"):
         em = discord.Embed(colour = 3447033)
@@ -116,7 +122,6 @@ async def on_message(message):
             await message.channel.send(embed=em)
             client.loop.run_until_complete(client.logout())
             os.system("python3 /home/pi/Hal.py")
-            #os.system("C:\Users\cmwol\Desktop\__pycache__\python\HAL")
             raise SystemExit     
 
     if str(message.content).upper().upper()==("*MOVE"):
@@ -174,6 +179,12 @@ async def on_message(message):
         
     
     if str(message.content).upper().startswith("*PLAY|"):
+        if channel == None:
+            em = discord.Embed(colour = 3447033)
+            em.set_author(name="Please join a voice channel to start a song")
+            em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
+            await message.channel.send(embed = em)
+            return 
         if Player!=None:
             if message.guild.voice_client.is_playing():
                 em = discord.Embed(colour = 3447033)
