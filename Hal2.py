@@ -14,17 +14,11 @@ import urllib
 import datetime
 import asyncio
 import pafy
+
 print("Hal is Booting up...")
 
-#uration_in_s = duration.total_seconds()
-#days = divmod(duration_in_s, 86400)
-#hours = divmod(days[1],3600)
-#minutes = divmod(hour[1], 60)
-#seconds = divmod(minutes[1], 1)
 
 Startup = datetime.datetime.now()
-
-
 CREATOR_ID=653386075095695361
 HAL_ID=663923530626367509
 
@@ -38,7 +32,6 @@ Player = None
 Memberinfo = []
 Blocked=[]
 Voice=[]
-profooter=""
 EMBEDCOLOR = 3447033
 DARK_NAVY = 2899536
 
@@ -54,8 +47,7 @@ ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 ffmpeg_options = {
     'options': '-vn'
 }
-      
-        
+              
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(MS,source,*,data,volume=1.0):
         super().__init__(source, volume)
@@ -78,12 +70,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
 today = datetime.date.today()
 now = datetime.datetime.now()
 
-
 @client.event
 async def on_ready():
     await client.change_presence(activity=discord.Game(name="Rewrite is superior", type = 1, url="https://www.youtube.com/watch?v=NiUmFQY3LNA"))
 
-   
 @client.event
 async def on_message(message):
     global Player
@@ -91,13 +81,13 @@ async def on_message(message):
     global Blocked
     global Volume
     global MusicMSG
-    global Execute_Order_66
-    global repeat
     Volume = 1.0
     import datetime
-
-
-    
+    global countup
+    global time_array
+    global time_message
+    global time_s
+    Count = 0
 
     user = message.guild.get_member(HAL_ID)
     channel = message.author.voice.channel
@@ -118,9 +108,12 @@ async def on_message(message):
         if message.author.id!=CREATOR_ID:
             em = discord.Embed(colour=3447003)
             em.set_author(name="This Command Is A Creator Only Command.")
-            await client.send_message(message.channel, embed=em)
+            await message.channel.send(embed=em)
 
         if message.author.id==CREATOR_ID:
+            em = discord.Embed(colour=3447003)
+            em.set_author(name="Hal is restarting...")
+            await message.channel.send(embed=em)
             client.loop.run_until_complete(client.logout())
             os.system("python3 /home/pi/Hal.py")
             #os.system("C:\Users\cmwol\Desktop\__pycache__\python\HAL")
@@ -131,14 +124,20 @@ async def on_message(message):
         em = discord.Embed(colour=3447003)
         em.set_author(name = "Hal Has moved channels")
         await message.channel.send(embed=em)
-        
 
     if str(message.content).upper() == ("*STATUS"):
-        em = discord.Embed(title="Status Update" , description=("Number of Fatal Errors: 0" + "\n" + "Last Restarted: " + str(Startup - datetime.datetime.now()) + " ago"), colour=3447003)
+        em = discord.Embed(title="Status Update" , description=("Number of Fatal Errors: 0" + "\n" + "Last Restarted: " + str(datetime.datetime.now() - Startup) + " ago"), colour=3447003)
         em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
         em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
         await message.channel.send( embed=em)
 
+    saga = datetime.date(2020,10,20) - datetime.date.today()
+
+    if str(message.content).upper() == ("*COUNTDOWN"):
+        em = discord.Embed(colour = 3447033)
+        em.set_author(name=saga)
+        await message.channel.send(embed = em)
+        
     if str(message.content).upper().startswith("*VOLUME|"):        
         if Player == None:
             em = discord.Embed(colour=3447003)
@@ -159,8 +158,7 @@ async def on_message(message):
                 em = discord.Embed(colour=3447003)
                 em.set_author(name="Volume Number Invalid")
                 await message.channel.send(embed=em)
-            
-                                                        
+                                               
     if str(message.content).upper()=='*MUSIC':
         misc=[]
         musc=[]
@@ -173,6 +171,7 @@ async def on_message(message):
         em.add_field(name="Owner Only", value="```"+ "*Restart" +"\n"+ "*Leave"  + "\n" .join(OO)+"```")
         em.set_footer(text="Hal | {:%b,%d %Y}".format(today))
         await message.channel.send(embed=em)
+        
     
     if str(message.content).upper().startswith("*PLAY|"):
         if Player!=None:
@@ -210,7 +209,6 @@ async def on_message(message):
                 else:
                     AMPM = "PM"
                     hour = hour -12
-                
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
                 await message.channel.send(embed=em)
                 message.guild.voice_client.play(Player)
@@ -233,29 +231,14 @@ async def on_message(message):
                 else:
                     AMPM = "pm"
                     hour = hour -12
-                
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +str(now.minute) + AMPM)
-                await message.channel.send(message.channel,embed=em) 
-      
+                await message.channel.send(embed=em) 
         except IndexError:
             await message.channel.send ("Could not find this video on YouTube.")
             if(Player.is_playing == False):
                 em= discord.Embed(description = Player.title +link+ "\n" + "**Song Has Ended**", colour = 3447003)
                 em.set_author(name = "Music", icon_url=message.author.avatar_url)
                 await message.channel.send(embed=em)
-
-    if str(message.content).upper().upper() == ("*REPEAT"):
-        if Player!=None:
-            if message.guild.voice_client.is_playing():
-                em = discord.Embed(colour = 3447033)
-                em.set_author(name="Song In Progress! Once the song is done you can play your song. ")
-                em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
-                await message.channel.send(embed = em)
-        if Player == None:
-            channel = message.author.voice.channel
-            await channel.connect()
-            while message.guild.voice_client == None:
-                await message.guild.voice_client.play(Player)
 
 
     if str(message.content).upper().upper() == ("*SKIP"):
