@@ -2,18 +2,11 @@ import discord
 import TokenDoc
 import youtube_dl
 import os
-import csv
 import re
-import sys
-import logging
-import threading
-import time
-import requests
-import random
 import urllib
 import datetime
-import asyncio
 import pafy
+
 
 print("Hal is Booting up...")
 
@@ -80,15 +73,13 @@ async def on_message(message):
     global Player
     global MusicAuthorID
     global Blocked
-    global Volume
-    global MusicMSG
     Volume = 1.0
     import datetime
     global countup
     global time_array
     global time_message
     global time_s
-    Count = 0
+    global Blocked
 
     user = message.guild.get_member(HAL_ID)
     channel = None
@@ -130,6 +121,36 @@ async def on_message(message):
         em.set_author(name = "Hal Has moved channels")
         await message.channel.send(embed=em)
 
+    if str(message.content).upper().startswith("*BLOCK|"):
+        if message.author.id!=CREATOR_ID:
+            em = discord.Embed(colour=3447003)
+            em.set_author(name="This Command Is a Creator Only Command!")
+            await message.channel.send(embed=em)
+        if message.author.id==CREATOR_ID:
+            Blocked.append(message.guild.get_member_named(str(message.content).split('|')[1]))
+            em = discord.Embed(colour=3447003)
+            em.set_author(name="{0} Has Been Blocked.".format(str(message.guild.get_member_named(str(message.content).split('|')[1]))))
+            await message.channel.send(embed=em)
+        else:
+            em = discord.Embed(colour=3447003)
+            em.set_author(name="This is a Admin Only command.")
+
+    if str(message.content).upper().startswith("*UNBLOCK|"):
+        if message.author.id!=CREATOR_ID:
+            em = discord.Embed(colour=3447003)
+            em.set_author(name="This Command Is A Creator Only Command.")
+            await message.channel.send(embed=em)
+        if message.author.id==CREATOR_ID:
+            Blocked.remove(message.guild.get_member_named(str(message.content).split('|')[1]))
+            em = discord.Embed(colour=3447003)
+            em.set_author(name="{0} Has Been Unblocked.".format(str(message.guild.get_member_named(str(message.content).split('|')[1]))))
+            await message.channel.send(embed=em)
+
+    if str(message.content).upper() == ("*BLOCKLIST"):
+        em = discord.Embed(colour = 3447033)
+        em.set_author(name="BlockList: "  + str(Blocked))
+        await message.channel.send(embed = em)
+         
     if str(message.content).upper() == ("*STATUS"):
         em = discord.Embed(title="Status Update" , description=("Number of Fatal Errors: 0" + "\n" + "Last Restarted: " + str(datetime.datetime.now() - Startup) + " ago"), colour=3447003)
         em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
@@ -168,7 +189,6 @@ async def on_message(message):
         misc=[]
         musc=[]
         OO=[]
-        musicinfo=[]
         em = discord.Embed(title='Help',description="** *HelpCommands for command-specific information**",colour=DARK_NAVY)
         em.add_field(name="Miscellaneous", value="```"+ "*Test" + "\n" + "*Help" + "\n".join(misc) + "```")
         #em.add_field(name ="Music Info", value = "``" + "Name of Song/Video, Youtube Links, Soundcloud links, Spotify Links." + "``" +"\n".join(musicinfo))
@@ -184,7 +204,7 @@ async def on_message(message):
             em.set_author(name="Please join a voice channel to start a song")
             em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
             await message.channel.send(embed = em)
-            return 
+            return
         if Player!=None:
             if message.guild.voice_client.is_playing():
                 em = discord.Embed(colour = 3447033)
@@ -201,6 +221,8 @@ async def on_message(message):
                 url = (link)
                 video = pafy.new(url)
                 v_min, v_sec = divmod(video.length,60)
+                v_hours = int(v_min/60)
+                v_min = v_min%60
                 
             if message.guild.voice_client == None:
                 Player = await YTDLSource.from_url(link,loop = client.loop)
@@ -210,7 +232,8 @@ async def on_message(message):
                 while message.guild.voice_client == None:
                     await message.guild.voice_client.play(Player)
                 Player = await YTDLSource.from_url(link,loop = client.loop)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  + str(v_min) + ":" + str(v_sec) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  + str(v_hours) + ":" +  str(v_min) + ":" + str(v_sec) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 now = datetime.datetime.now()
                 AMPM = ""
@@ -228,11 +251,12 @@ async def on_message(message):
                 try:
                     Player = await YTDLSource.from_url(link,loop = client.loop)
                 except exception as e:
+                    print (e)
                     channel=message.author.voice.channel
                     await channel.connect()
                     Player = await YTDLSource.from_url(link,loop = client.loop)
                 message.guild.voice_client.play(Player)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(v_min) + ":" + str(v_sec)+ "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``"  + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(v_hours) + ":" + str(v_min) + ":" + str(v_sec)+ "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``"  + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 now = datetime.datetime.now()
                 AMPM = ""
@@ -250,6 +274,13 @@ async def on_message(message):
                 em= discord.Embed(description = Player.title +link+ "\n" + "**Song Has Ended**", colour = 3447003)
                 em.set_author(name = "Music", icon_url=message.author.avatar_url)
                 await message.channel.send(embed=em)
+
+    if str(message.content).upper() == ("*PAUSE"):
+        Player.pause()
+        em = discord.Embed(colour=3447003)
+        em = discord.Embed(title="Paused By " + str(message.author), icon_url=message.author.avatar_url , description=("Paused Song: " + Player.title), colour=3447003)
+        em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
+        await message.channel.send(embed=em)
 
 
     if str(message.content).upper().upper() == ("*SKIP"):
