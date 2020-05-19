@@ -117,31 +117,6 @@ async def on_message(message):
         em.set_author(name = "Hal Has moved channels")
         await message.channel.send(embed=em)
 
-    if str(message.content).upper().startswith("*BLOCK|"):
-        if message.author.id!=CREATOR_ID:
-            em = discord.Embed(colour=3447003)
-            em.set_author(name="This Command Is a Creator Only Command!")
-            await message.channel.send(embed=em)
-        if message.author.id==CREATOR_ID:
-            Blocked.append(message.guild.get_member_named(str(message.content).split('|')[1]))
-            em = discord.Embed(colour=3447003)
-            em.set_author(name="{0} Has Been Blocked.".format(str(message.guild.get_member_named(str(message.content).split('|')[1]))))
-            await message.channel.send(embed=em)
-        else:
-            em = discord.Embed(colour=3447003)
-            em.set_author(name="This is a Admin Only command.")
-
-    if str(message.content).upper().startswith("*UNBLOCK|"):
-        if message.author.id!=CREATOR_ID:
-            em = discord.Embed(colour=3447003)
-            em.set_author(name="This Command Is A Creator Only Command.")
-            await message.channel.send(embed=em)
-        if message.author.id==CREATOR_ID:
-            Blocked.remove(message.guild.get_member_named(str(message.content).split('|')[1]))
-            em = discord.Embed(colour=3447003)
-            em.set_author(name="{0} Has Been Unblocked.".format(str(message.guild.get_member_named(str(message.content).split('|')[1]))))
-            await message.channel.send(embed=em)
-
     if str(message.content).upper() == ("*STATUS"):
         em = discord.Embed(title="Status Update" , description=("Number of Fatal Errors: 0" + "\n" + "Last Restarted: " + str(datetime.datetime.now() - Startup) + " ago"), colour=3447003)
         em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
@@ -193,7 +168,6 @@ async def on_message(message):
                 v_min, v_sec = divmod(video.length,60)
                 v_hours = int(v_min/60)
                 v_min = v_min%60
-                
             if message.guild.voice_client == None:
                 Player = await YTDLSource.from_url(link,loop = client.loop)
                 channel=message.author.voice.channel
