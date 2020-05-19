@@ -108,7 +108,7 @@ async def on_message(message):
             em.set_author(name="Hal is restarting...")
             await message.channel.send(embed=em)
             client.loop.run_until_complete(client.logout())
-            os.system("python3 /home/pi/Hal.py")
+            os.system("python3 /usr/bin/python3.6 /home/pi/Hal.py")
             raise SystemExit
         
     if str(message.content).upper().upper()==("*MOVE"):
