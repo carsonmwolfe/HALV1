@@ -80,7 +80,7 @@ async def on_message(message):
     channel = None
     try:
         channel = message.author.voice.channel
-    except Exception as e::
+    except Exception as e:
         print (e)
         print("Author not in voice channel")
         
