@@ -143,24 +143,12 @@ async def on_message(message):
             em.set_author(name="{0} Has Been Unblocked.".format(str(message.guild.get_member_named(str(message.content).split('|')[1]))))
             await message.channel.send(embed=em)
 
-    if str(message.content).upper() == ("*BLOCKLIST"):
-        em = discord.Embed(colour = 3447033)
-        em.set_author(name="BlockList: "  + str(Blocked))
-        await message.channel.send(embed = em)
-         
     if str(message.content).upper() == ("*STATUS"):
         em = discord.Embed(title="Status Update" , description=("Number of Fatal Errors: 0" + "\n" + "Last Restarted: " + str(datetime.datetime.now() - Startup) + " ago"), colour=3447003)
         em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
         em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
         await message.channel.send( embed=em)
-
-    saga = datetime.date(2020,10,20) - datetime.date.today()
-
-    if str(message.content).upper() == ("*COUNTDOWN"):
-        em = discord.Embed(colour = 3447033)
-        em.set_author(name=saga)
-        await message.channel.send(embed = em)
-        
+     
     if str(message.content).upper().startswith("*VOLUME|"):
         if Player == None:
             em = discord.Embed(colour=3447003)
@@ -180,20 +168,7 @@ async def on_message(message):
             if (total > 201 or total < 0):
                 em = discord.Embed(colour=3447003)
                 em.set_author(name="Volume Number Invalid")
-                await message.channel.send(embed=em)
-                                               
-    if str(message.content).upper()=='*MUSIC':
-        misc=[]
-        musc=[]
-        OO=[]
-        em = discord.Embed(title='Help',description="** *HelpCommands for command-specific information**",colour=DARK_NAVY)
-        em.add_field(name="Miscellaneous", value="```"+ "*Test" + "\n" + "*Help" + "\n".join(misc) + "```")
-        #em.add_field(name ="Music Info", value = "``" + "Name of Song/Video, Youtube Links, Soundcloud links, Spotify Links." + "``" +"\n".join(musicinfo))
-        em.add_field(name="Music", value ="```"+"*Play|" + "\n" + "*Volume" + "\n"+ "*Resume" + "\n" + "*Pause" + "\n" + "*Move" + "\n" + "*Skip" + "\n" .join(musc) + "```")
-        em.add_field(name="Owner Only", value="```"+ "*Restart" +"\n"+ "*Leave"  + "\n" .join(OO)+"```")
-        em.set_footer(text="Hal | {:%b,%d %Y}".format(today))
-        await message.channel.send(embed=em)
-        
+                await message.channel.send(embed=em)        
     
     if str(message.content).upper().startswith("*PLAY|"):
         if channel == None:
@@ -272,13 +247,6 @@ async def on_message(message):
                 em.set_author(name = "Music", icon_url=message.author.avatar_url)
                 await message.channel.send(embed=em)
 
-    if str(message.content).upper() == ("*PAUSE"):
-        Player.pause()
-        em = discord.Embed(colour=3447003)
-        em = discord.Embed(title="Paused By " + str(message.author), icon_url=message.author.avatar_url , description=("Paused Song: " + Player.title), colour=3447003)
-        em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
-        await message.channel.send(embed=em)
-
 
     if str(message.content).upper().upper() == ("*SKIP"):
         if message.author.id == MusicAuthorID:
@@ -294,5 +262,5 @@ async def on_message(message):
             em.set_author(name="You Can't Skip Other Peoples Songs")
             em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
             await message.channel.send(embed = em)
-            
+
 client.loop.run_until_complete(client.start(TokenDoc.token))
