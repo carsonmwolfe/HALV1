@@ -71,12 +71,9 @@ async def on_ready():
 @client.event
 async def on_message(message):
     global Player
-    global MusicAuthorID
     global Blocked
     Volume = 1.0
     import datetime
-    global countup
-    global time_array
     global time_message
     global time_s
     global Blocked
@@ -113,8 +110,8 @@ async def on_message(message):
             await message.channel.send(embed=em)
             client.loop.run_until_complete(client.logout())
             os.system("python3 /home/pi/Hal.py")
-            raise SystemExit     
-
+            raise SystemExit
+        
     if str(message.content).upper().upper()==("*MOVE"):
         await user.edit(voice_channel = channel)
         em = discord.Embed(colour=3447003)
@@ -164,7 +161,7 @@ async def on_message(message):
         em.set_author(name=saga)
         await message.channel.send(embed = em)
         
-    if str(message.content).upper().startswith("*VOLUME|"):        
+    if str(message.content).upper().startswith("*VOLUME|"):
         if Player == None:
             em = discord.Embed(colour=3447003)
             em.set_author(name = "Hal Is Not In A Voice Channel")
@@ -267,7 +264,7 @@ async def on_message(message):
                     AMPM = "pm"
                     hour = hour -12
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +str(now.minute) + AMPM)
-                await message.channel.send(embed=em) 
+                await message.channel.send(embed=em)
         except IndexError:
             await message.channel.send ("Could not find this video on YouTube.")
             if(Player.is_playing == False):
@@ -297,6 +294,5 @@ async def on_message(message):
             em.set_author(name="You Can't Skip Other Peoples Songs")
             em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
             await message.channel.send(embed = em)
-        
-     
+            
 client.loop.run_until_complete(client.start(TokenDoc.token))
