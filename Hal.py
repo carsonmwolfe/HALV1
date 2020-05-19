@@ -72,8 +72,6 @@ async def on_ready():
 async def on_message(message):
     global Player
     global Blocked
-    Volume = 1.0
-    import datetime
     global time_message
     global time_s
     global Blocked
@@ -82,7 +80,8 @@ async def on_message(message):
     channel = None
     try:
         channel = message.author.voice.channel
-    except:
+    except Exception as e::
+        print (e)
         print("Author not in voice channel")
         
     
@@ -163,12 +162,11 @@ async def on_message(message):
             if (total < 200 and total > 0):
                 em = discord.Embed(colour=3447003)
                 em.set_author(name="Music Volume has been changed to {0}".format(str(total))+"%." )
-                Volume = total
                 await message.channel.send(embed=em)
             if (total > 201 or total < 0):
                 em = discord.Embed(colour=3447003)
                 em.set_author(name="Volume Number Invalid")
-                await message.channel.send(embed=em)        
+                await message.channel.send(embed=em)
     
     if str(message.content).upper().startswith("*PLAY|"):
         if channel == None:
@@ -204,7 +202,6 @@ async def on_message(message):
                 while message.guild.voice_client == None:
                     await message.guild.voice_client.play(Player)
                 Player = await YTDLSource.from_url(link,loop = client.loop)
-                
                 em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  + str(v_hours) + ":" +  str(v_min) + ":" + str(v_sec) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 now = datetime.datetime.now()
@@ -222,7 +219,7 @@ async def on_message(message):
                 channel=message.author.voice.channel
                 try:
                     Player = await YTDLSource.from_url(link,loop = client.loop)
-                except exception as e:
+                except Exception as e:
                     print (e)
                     channel=message.author.voice.channel
                     await channel.connect()
