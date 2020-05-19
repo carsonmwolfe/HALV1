@@ -7,3 +7,10 @@ HAL is a discord bot coded in python3.6. HAL has been in development since Janua
 ###### Python3.x required 
 ###### Raspberry Pi required 
 
+### Running HAL
+
+```  cd /home/pi/Desktop/HAL/Restart.py ```
+
+Restart.py is used to run his program in an infite loop incase of any fatal errors he will restart all by himself.
+
+
