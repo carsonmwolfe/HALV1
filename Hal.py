@@ -27,6 +27,7 @@ Blocked=[]
 Voice=[]
 EMBEDCOLOR = 3447033
 DARK_NAVY = 2899536
+MusicAuthorID = ""
 
 
 
@@ -49,6 +50,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
         MS.title = data.get('title')
         MS.duration = data.get('duration')
         MS.is_live = False
+        if MS.duration == 0:
+            MS.is_live = True
     @classmethod
     async def from_url(cls,url,*,loop=None,stream=False):
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = False))
@@ -69,12 +72,17 @@ async def on_ready():
     await client.change_presence(activity=discord.Game(name="Rewrite is superior", type = 1, url="https://www.youtube.com/watch?v=NiUmFQY3LNA"))
 
 @client.event
+async def update_loop(MS):
+    
+    
+@client.event
 async def on_message(message):
     global Player
     global Blocked
     global time_message
     global time_s
     global Blocked
+    global MusicAuthorID
 
     user = message.guild.get_member(HAL_ID)
     channel = None
@@ -144,6 +152,8 @@ async def on_message(message):
                 await message.channel.send(embed=em)
     
     if str(message.content).upper().startswith("*PLAY|"):
+        MusicAuthorID == message.author.id
+        
         if channel == None:
             em = discord.Embed(colour = 3447033)
             em.set_author(name="Please join a voice channel to start a song")
@@ -165,9 +175,26 @@ async def on_message(message):
                 link = ("http://www.youtube.com/watch?v=" + searchresults[0])
                 url = (link)
                 video = pafy.new(url)
-                v_min, v_sec = divmod(video.length,60)
-                v_hours = int(v_min/60)
-                v_min = v_min%60
+                #v_min, v_sec = divmod(video.length,60)
+                #v_hours = int(v_min/60)
+                #v_min = v_min%60
+                minutes = int(video.length/60)
+                seconds = int(video.length-(minutes*60))
+                hours = int(minutes/60)
+                if hours > 0:
+                    minutes = minutes-(hours*60)
+                    if len(str(minutes))==1:
+                        minutes="0"+str(minutes)
+                    if len(str(seconds)) == 1:
+                        BIC= str(hours)+":"+"0"+str(seconds)
+                    else:
+                        BIC = str(hours)+":"+str(minutes)+":"+str(seconds)
+                else:
+                    if len(str(seconds)) ==1:
+                        BIC = str(minutes)+":"+"0"+str(seconds)
+                    else:
+                        BIC = str(minutes)+":"+str(seconds)
+               
             if message.guild.voice_client == None:
                 Player = await YTDLSource.from_url(link,loop = client.loop)
                 channel=message.author.voice.channel
@@ -176,7 +203,7 @@ async def on_message(message):
                 while message.guild.voice_client == None:
                     await message.guild.voice_client.play(Player)
                 Player = await YTDLSource.from_url(link,loop = client.loop)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  + str(v_hours) + ":" +  str(v_min) + ":" + str(v_sec) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 now = datetime.datetime.now()
                 AMPM = ""
@@ -199,7 +226,7 @@ async def on_message(message):
                     await channel.connect()
                     Player = await YTDLSource.from_url(link,loop = client.loop)
                 message.guild.voice_client.play(Player)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(v_hours) + ":" + str(v_min) + ":" + str(v_sec)+ "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``"  + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``"  + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 now = datetime.datetime.now()
                 AMPM = ""
