@@ -71,8 +71,7 @@ now = datetime.datetime.now()
 async def on_ready():
     await client.change_presence(activity=discord.Game(name="Rewrite is superior", type = 1, url="https://www.youtube.com/watch?v=NiUmFQY3LNA"))
 
-@client.event
-async def update_loop(MS):
+
     
     
 @client.event
