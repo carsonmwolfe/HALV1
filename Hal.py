@@ -28,6 +28,9 @@ Voice=[]
 EMBEDCOLOR = 3447033
 DARK_NAVY = 2899536
 MusicAuthorID = ""
+skip = False
+pause = False
+resume = False
 
 
 
@@ -57,7 +60,9 @@ class YTDLSource(discord.PCMVolumeTransformer):
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = False))
         if data.get('duration')==0 or data.get('duration')>3600:
             stream=True
+            print ("Stream = " + stream)
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = not stream))
+        print ("Stream = False")
         cls.url = url
         if 'entries' in data:
             data = data['entries'][0]
@@ -71,8 +76,16 @@ now = datetime.datetime.now()
 async def on_ready():
     await client.change_presence(activity=discord.Game(name="Rewrite is superior", type = 1, url="https://www.youtube.com/watch?v=NiUmFQY3LNA"))
 
+@client.event
+async def background_loop():
+    while True:
+        
+        import datetime
+        global c_time
 
-    
+        c = datetime.datetime.now() - starttime
+
+        print ("XD" + c) 
     
 @client.event
 async def on_message(message):
@@ -82,7 +95,12 @@ async def on_message(message):
     global time_s
     global Blocked
     global MusicAuthorID
+    global start
+    global skip
+    global pause
+    global resume
 
+    
     user = message.guild.get_member(HAL_ID)
     channel = None
     try:
@@ -91,7 +109,6 @@ async def on_message(message):
         print (e)
         print("Author not in voice channel")
         
-    
     if str(message.content).upper() == ("*TEST"):
         em = discord.Embed(colour = 3447033)
         em.set_author(name="Test Complete")
@@ -149,10 +166,22 @@ async def on_message(message):
                 em = discord.Embed(colour=3447003)
                 em.set_author(name="Volume Number Invalid")
                 await message.channel.send(embed=em)
+
     
     if str(message.content).upper().startswith("*PLAY|"):
+        skip = False
+        pause = False
+        resume = False
         MusicAuthorID == message.author.id
-        
+        currentlyplaying = False
+        paused = False
+        starttime = datetime.datetime.now()
+        #inside the Queue add-
+            #Clear
+            #shuffle
+            #remove
+            #loop
+            #skip
         if channel == None:
             em = discord.Embed(colour = 3447033)
             em.set_author(name="Please join a voice channel to start a song")
@@ -161,8 +190,8 @@ async def on_message(message):
             return
         if Player!=None:
             if message.guild.voice_client.is_playing():
-                em = discord.Embed(colour = 3447033)
-                em.set_author(name="Song In Progress! Once the song is done you can play your song. ")
+                em = discord.Embed(title = "", descrption = ("Song In Progress! " + "**" + Player.title + "**" + " Has been added to the Queue"),colour = 3447033)
+                em.set_author(name="Song Added To The Queue")
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
                 await message.channel.send(embed = em)
                 #message.guild.voice_client.stop()
@@ -174,9 +203,7 @@ async def on_message(message):
                 link = ("http://www.youtube.com/watch?v=" + searchresults[0])
                 url = (link)
                 video = pafy.new(url)
-                #v_min, v_sec = divmod(video.length,60)
-                #v_hours = int(v_min/60)
-                #v_min = v_min%60
+                
                 minutes = int(video.length/60)
                 seconds = int(video.length-(minutes*60))
                 hours = int(minutes/60)
@@ -193,7 +220,6 @@ async def on_message(message):
                         BIC = str(minutes)+":"+"0"+str(seconds)
                     else:
                         BIC = str(minutes)+":"+str(seconds)
-               
             if message.guild.voice_client == None:
                 Player = await YTDLSource.from_url(link,loop = client.loop)
                 channel=message.author.voice.channel
@@ -202,7 +228,15 @@ async def on_message(message):
                 while message.guild.voice_client == None:
                     await message.guild.voice_client.play(Player)
                 Player = await YTDLSource.from_url(link,loop = client.loop)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                import time
+                minute = 0
+                second = 0 
+                hourbruh = 0
+                background = 0
+                sec = video.length
+          
+                currentlyplaying == True
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + "0:00"  + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 now = datetime.datetime.now()
                 AMPM = ""
@@ -213,8 +247,90 @@ async def on_message(message):
                     AMPM = "PM"
                     hour = hour -12
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
-                await message.channel.send(embed=em)
+                Music_SOS = await message.channel.send(embed=em)
                 message.guild.voice_client.play(Player)
+                
+                while second < sec or background == sec or skip:
+                    background +=1
+                    time.sleep(1)
+                    second +=1
+                    if hour > 0:
+                        minute = int(minute)-(hourbruh*60)
+                        if len(str(minute))== 1:
+                            minute= "0" + str(minute)
+                        if len(str(second)) == 1:
+                            AIC= str(minute)+":"+"0"+str(second)
+                        else:
+                            AIC = str(minute)+":"+str(second)
+                    else:
+                        if len(str(second)) ==1:
+                            AIC = str(minute)+":"+"0"+str(second)
+                        else:
+                            AIC = str(minute)+":"+str(second)
+                            
+                    em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                    em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
+                    now = datetime.datetime.now()
+                    AMPM = ""
+                    hour = now.hour
+                    if now.hour < 13:
+                        AMPM = "AM"
+                    else:
+                        AMPM = "PM"
+                        hour = hour -12
+                    em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
+                    await Music_SOS.edit(embed=em)
+                    if pause == True:
+                        
+                        em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  "Paused" + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                        em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
+                        now = datetime.datetime.now()
+                        AMPM = ""
+                        hour = now.hour
+                        if now.hour < 13:
+                            AMPM = "AM"
+                        else:
+                            AMPM = "PM"
+                            hour = hour -12
+                        em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
+                        await Music_SOS.edit(embed=em)
+                    if resume == True:
+                        em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                        em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
+                        now = datetime.datetime.now()
+                        AMPM = ""
+                        hour = now.hour
+                        if now.hour < 13:
+                            AMPM = "AM"
+                        else:
+                            AMPM = "PM"
+                            hour = hour -12
+                        em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
+                        await Music_SOS.edit(embed=em)
+                        
+                    if background == sec:
+                        em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + "``" + '**' + "Song Has Ended" + "**" +  '``'), colour=3447003)
+                        em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
+                        now = datetime.datetime.now()
+                        AMPM = ""
+                        hour = now.hour
+                        if now.hour < 13:
+                            AMPM = "AM"
+                        else:
+                            AMPM = "PM"
+                            hour = hour -12
+                        em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
+                        await Music_SOS.edit(embed=em)
+                        break
+                    if second == 59:
+                        minute = int(minute)
+                        second = 0
+                        minute += 1
+                    if minute == 60:
+                        minute = int(minute)
+                        second = 0
+                        minute = 0
+                        hourbruh += 1
             else:
                 channel=message.author.voice.channel
                 try:
@@ -225,7 +341,7 @@ async def on_message(message):
                     await channel.connect()
                     Player = await YTDLSource.from_url(link,loop = client.loop)
                 message.guild.voice_client.play(Player)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``"  + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``"  + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 now = datetime.datetime.now()
                 AMPM = ""
@@ -245,7 +361,18 @@ async def on_message(message):
                 await message.channel.send(embed=em)
 
 
+    if str(message.content).upper().upper() == ("*PAUSE"):
+        pause = True
+        resume = False
+        message.guild.voice_client.pause()
+        
+    if str(message.content).upper().upper() == ("*RESUME"):
+        resume = True
+        pause= False
+        message.guild.voice_client.resume()
+        
     if str(message.content).upper().upper() == ("*SKIP"):
+        skip = True 
         if message.author.id == MusicAuthorID:
             if Player!=None:
                 if message.guild.voice_client.is_playing():
