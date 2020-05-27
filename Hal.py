@@ -6,6 +6,7 @@ import re
 import urllib
 import datetime
 import pafy
+from lxml import etree
 
 
 print("Hal is Booting up...")
@@ -25,12 +26,16 @@ Player = None
 Memberinfo = []
 Blocked=[]
 Voice=[]
+Queue = []
 EMBEDCOLOR = 3447033
 DARK_NAVY = 2899536
 MusicAuthorID = ""
 skip = False
 pause = False
 resume = False
+currentlyplaying = False
+Queuetitle = None
+Music_SOS = None
 
 
 
@@ -60,7 +65,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = False))
         if data.get('duration')==0 or data.get('duration')>3600:
             stream=True
-            print ("Stream = " + stream)
+            print ("Stream = " + str(stream))
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = not stream))
         print ("Stream = False")
         cls.url = url
@@ -85,8 +90,8 @@ async def background_loop():
 
         c = datetime.datetime.now() - starttime
 
-        print ("XD" + c) 
-    
+      
+
 @client.event
 async def on_message(message):
     global Player
@@ -99,8 +104,13 @@ async def on_message(message):
     global skip
     global pause
     global resume
+    global loading
+    global currentlyplaying
+    global Queuetitle
+    global Queue
+    global QueueList
+    global Music_SOS
 
-    
     user = message.guild.get_member(HAL_ID)
     channel = None
     try:
@@ -156,8 +166,6 @@ async def on_message(message):
             Vol = Player.volume
             total= int(str(message.content).split('|')[1])
             Vol=total/100
-            print ("volume" + str(Vol))
-            print ("total" + str(total))
             if (total < 200 and total > 0):
                 em = discord.Embed(colour=3447003)
                 em.set_author(name="Music Volume has been changed to {0}".format(str(total))+"%." )
@@ -173,70 +181,86 @@ async def on_message(message):
         pause = False
         resume = False
         MusicAuthorID == message.author.id
-        currentlyplaying = False
         paused = False
         starttime = datetime.datetime.now()
-        #inside the Queue add-
-            #Clear
-            #shuffle
-            #remove
-            #loop
-            #skip
-        if channel == None:
-            em = discord.Embed(colour = 3447033)
-            em.set_author(name="Please join a voice channel to start a song")
-            em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
+
+        if message.guild.voice_client == None:
+            channel=message.author.voice.channel
+            await channel.connect()
+        else:
+             await user.edit(voice_channel = channel)
+
+        if len(Queue)<1:
+            QueueList="\nNo Songs In Queue"
+        if currentlyplaying == True:
+            em = discord.Embed(colour=3447003)
+            em.set_author(name="Song Added To Queue")
             await message.channel.send(embed = em)
-            return
-        if Player!=None:
-            if message.guild.voice_client.is_playing():
-                em = discord.Embed(title = "", descrption = ("Song In Progress! " + "**" + Player.title + "**" + " Has been added to the Queue"),colour = 3447033)
-                em.set_author(name="Song Added To The Queue")
-                em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
-                await message.channel.send(embed = em)
-                #message.guild.voice_client.stop()
-        try:
             query_string = urllib.parse.urlencode({"search_query" : str(message.content).split('|')[1]})
             req = urllib.request.Request("http://www.youtube.com/results?" + query_string)
             with urllib.request.urlopen(req) as html:
                 searchresults = re.findall(r'href=\"\/watch\?v=(.{11})', html.read().decode())
                 link = ("http://www.youtube.com/watch?v=" + searchresults[0])
+                QueueInfo = await YTDLSource.from_url(link,loop = client.loop)
+                print (QueueInfo.title)
                 url = (link)
-                video = pafy.new(url)
+            if "youtube.com" in url:
+                youtube = etree.HTML(urllib.request.urlopen(url).read())
+                name=youtube.xpath("//span[@id='eow-title']/@title")
+                Queue.append([name,url])
+                QueueList = ""
+                for x in Queue:
+                    QueueList += "\n" + "["+ x[0][0] + "]" "("+x[1]+")"
+                    
+        if currentlyplaying == False:
+            currentlyplaying == True
+            if channel == None:
+                em = discord.Embed(colour = 3447033)
+                em.set_author(name="Please join a voice channel to start a song")
+                em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
+                await message.channel.send(embed = em)
+                return
+            try:
+                query_string = urllib.parse.urlencode({"search_query" : str(message.content).split('|')[1]})
+                req = urllib.request.Request("http://www.youtube.com/results?" + query_string)
+                with urllib.request.urlopen(req) as html:
+                    searchresults = re.findall(r'href=\"\/watch\?v=(.{11})', html.read().decode())
+                    link = ("http://www.youtube.com/watch?v=" + searchresults[0])
+                    url = (link)
+                    video = pafy.new(url)
+                    minutes = int(video.length/60)
+                    seconds = int(video.length-(minutes*60))
+                    hours = int(minutes/60)
+                    if hours > 0:
+                        minutes = minutes-(hours*60)
+                        if len(str(minutes))==1:
+                            minutes="0"+str(minutes)
+                        if len(str(seconds)) == 1:
+                            BIC= str(hours)+":"+"0"+str(seconds)
+                        else:
+                            BIC = str(hours)+":"+str(minutes)+":"+str(seconds)
+                    else:
+                        if len(str(seconds)) ==1:
+                            BIC = str(minutes)+":"+"0"+str(seconds)
+                        else:
+                            BIC = str(minutes)+":"+str(seconds)
                 
-                minutes = int(video.length/60)
-                seconds = int(video.length-(minutes*60))
-                hours = int(minutes/60)
-                if hours > 0:
-                    minutes = minutes-(hours*60)
-                    if len(str(minutes))==1:
-                        minutes="0"+str(minutes)
-                    if len(str(seconds)) == 1:
-                        BIC= str(hours)+":"+"0"+str(seconds)
-                    else:
-                        BIC = str(hours)+":"+str(minutes)+":"+str(seconds)
-                else:
-                    if len(str(seconds)) ==1:
-                        BIC = str(minutes)+":"+"0"+str(seconds)
-                    else:
-                        BIC = str(minutes)+":"+str(seconds)
-            if message.guild.voice_client == None:
                 Player = await YTDLSource.from_url(link,loop = client.loop)
-                channel=message.author.voice.channel
-                await channel.connect()
                 MusicAuthorID = message.author.id
+                
                 while message.guild.voice_client == None:
                     await message.guild.voice_client.play(Player)
                 Player = await YTDLSource.from_url(link,loop = client.loop)
+                #Queue.append(link)
                 import time
                 minute = 0
                 second = 0 
                 hourbruh = 0
                 background = 0
                 sec = video.length
-          
                 currentlyplaying == True
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + "0:00"  + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                title = Player.title
+                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + "0:00"  + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "**" +  "Queue:" + "**" +  "\nNo Songs In Queue" ), colour=3447003)
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 now = datetime.datetime.now()
                 AMPM = ""
@@ -249,7 +273,7 @@ async def on_message(message):
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
                 Music_SOS = await message.channel.send(embed=em)
                 message.guild.voice_client.play(Player)
-                
+                currentlyplaying = True
                 while second < sec or background == sec or skip:
                     background +=1
                     time.sleep(1)
@@ -266,9 +290,8 @@ async def on_message(message):
                         if len(str(second)) ==1:
                             AIC = str(minute)+":"+"0"+str(second)
                         else:
-                            AIC = str(minute)+":"+str(second)
-                            
-                    em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                            AIC = str(minute)+":"+str(second)    
+                    em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                     em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                     now = datetime.datetime.now()
                     AMPM = ""
@@ -281,8 +304,7 @@ async def on_message(message):
                     em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
                     await Music_SOS.edit(embed=em)
                     if pause == True:
-                        
-                        em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  "Paused" + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
+                        em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  "Paused" + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                         em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                         now = datetime.datetime.now()
                         AMPM = ""
@@ -294,21 +316,9 @@ async def on_message(message):
                             hour = hour -12
                         em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
                         await Music_SOS.edit(embed=em)
-                    if resume == True:
-                        em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
-                        em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
-                        now = datetime.datetime.now()
-                        AMPM = ""
-                        hour = now.hour
-                        if now.hour < 13:
-                            AMPM = "AM"
-                        else:
-                            AMPM = "PM"
-                            hour = hour -12
-                        em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
-                        await Music_SOS.edit(embed=em)
-                        
+    
                     if background == sec:
+                        print ("Kill me")
                         em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + "``" + '**' + "Song Has Ended" + "**" +  '``'), colour=3447003)
                         em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                         now = datetime.datetime.now()
@@ -321,7 +331,48 @@ async def on_message(message):
                             hour = hour -12
                         em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
                         await Music_SOS.edit(embed=em)
-                        break
+                        currentlyplaying = False
+                        if len(Queue) >0:
+                            background = 0
+                            second = 0
+                            currentlyplaying = True
+                            Player = await YTDLSource.from_url(Queue[0][1],loop = client.loop)
+                            sec = Player.data["duration"]
+                            minutes = int(sec/60)
+                            seconds = int(sec-(minutes*60))
+                            hours = int(sec/60)
+                            if hours > 0:
+                                minutes = minutes-(hours*60)
+                                if len(str(minutes))==1:
+                                    minutes="0"+str(minutes)
+                                if len(str(seconds)) == 1:
+                                    CIC= str(hours)+":"+"0"+str(seconds)
+                                else:
+                                    CIC = str(hours)+":"+str(minutes)+":"+str(seconds)
+                            else:
+                                if len(str(seconds)) ==1:
+                                    CIC = str(minutes)+":"+"0"+str(seconds)
+                                else:
+                                    CIC = str(minutes)+":"+str(seconds)
+                            
+                            print ("Sec" + str(sec))
+                            Queue.remove(Queue[0])
+                            while message.guild.voice_client == None:
+                                await message.guild.voice_client.play(Player)
+                            em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(CIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
+                            em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
+                            now = datetime.datetime.now()
+                            AMPM = ""
+                            hour = now.hour
+                            if now.hour < 13:
+                                AMPM = "AM"
+                            else:
+                                AMPM = "PM"
+                                hour = hour -12
+                            em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
+                            await Music_SOS.edit(embed=em)
+    
+           
                     if second == 59:
                         minute = int(minute)
                         second = 0
@@ -331,34 +382,31 @@ async def on_message(message):
                         second = 0
                         minute = 0
                         hourbruh += 1
-            else:
-                channel=message.author.voice.channel
-                try:
-                    Player = await YTDLSource.from_url(link,loop = client.loop)
-                except Exception as e:
-                    print (e)
-                    channel=message.author.voice.channel
-                    await channel.connect()
-                    Player = await YTDLSource.from_url(link,loop = client.loop)
-                message.guild.voice_client.play(Player)
-                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``"  + "\n" + "``" + "*Music For Full List Of Commands " + '``'), colour=3447003)
-                em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
-                now = datetime.datetime.now()
-                AMPM = ""
-                hour = now.hour
-                if now.hour < 13:
-                    AMPM = "am"
+                        
                 else:
-                    AMPM = "pm"
-                    hour = hour -12
-                em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +str(now.minute) + AMPM)
-                await message.channel.send(embed=em)
-        except IndexError:
-            await message.channel.send ("Could not find this video on YouTube.")
-            if(Player.is_playing == False):
-                em= discord.Embed(description = Player.title +link+ "\n" + "**Song Has Ended**", colour = 3447003)
-                em.set_author(name = "Music", icon_url=message.author.avatar_url)
-                await message.channel.send(embed=em)
+                    channel=message.author.voice.channel
+                    try:
+                        Player = await YTDLSource.from_url(link,loop = client.loop)
+                    except Exception as e:
+                        channel=message.author.voice.channel
+                        await channel.connect()
+                        Player = await YTDLSource.from_url(link,loop = client.loop)
+                    message.guild.voice_client.play(Player)
+                    em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``"  + "\n" +  "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
+                    em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
+                    now = datetime.datetime.now()
+                    AMPM = ""
+                    hour = now.hour
+                    if now.hour < 13:
+                        AMPM = "am"
+                    else:
+                        AMPM = "pm"
+                        hour = hour -12
+                    em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +str(now.minute) + AMPM)
+                    await message.channel.send(embed=em)
+            except IndexError:
+                await message.channel.send ("Could not find this video on YouTube.")
+               
 
 
     if str(message.content).upper().upper() == ("*PAUSE"):
