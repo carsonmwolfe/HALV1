@@ -10,7 +10,7 @@ import pafy
 import logging
 from typing import Dict
 import aiohttp
-from xml import etree
+from lxml import etree
 import requests
 import json
 
@@ -49,9 +49,6 @@ currentlyplaying = False
 Queuetitle = None
 Music_SOS = None
 Live = False
-
-
-
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
@@ -358,6 +355,7 @@ async def on_message(message):
                             await Music_SOS.edit(embed=em)
                             currentlyplaying = False
                             if len(Queue) >0:
+                                
                                 background = 0
                                 second = 0
                                 print ("Second" + str(second))
@@ -366,30 +364,32 @@ async def on_message(message):
                                 print ("BIC" + str(BIC))
                                 currentlyplaying = True
                                 Player = await YTDLSource.from_url(Queue[0][1],loop = client.loop)
+                                
                                 sec = Player.data["duration"]
                                 minutes = int(sec/60)
                                 seconds = int(sec-(minutes*60))
-                                hours = int(sec/60)
+                                hours = int(minutes/60)
                                 if hours > 0:
                                     minutes = minutes-(hours*60)
                                     if len(str(minutes))==1:
                                         minutes="0"+str(minutes)
                                     if len(str(seconds)) == 1:
-                                        CIC= str(hours)+":"+"0"+str(seconds)
+                                        BIC= str(hours)+":"+"0"+str(seconds)
                                     else:
-                                        CIC = str(hours)+":"+str(minutes)+":"+str(seconds)
+                                        BIC = str(hours)+":"+str(minutes)+":"+str(seconds)
                                 else:
                                     if len(str(seconds)) ==1:
-                                        CIC = str(minutes)+":"+"0"+str(seconds)
+                                        BIC = str(minutes)+":"+"0"+str(seconds)
                                     else:
-                                        CIC = str(minutes)+":"+str(seconds)
+                                        BIC = str(minutes)+":"+str(seconds)
                                 Queue.remove(Queue[0])
         
                                 QueueList = ""
                                 for x in Queue:
                                     QueueList += "\n" + "["+ x[0][0] + "]" "("+x[1]+")"
+                                    print(x)
                                 message.guild.voice_client.play(Player)
-                                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(CIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
+                                em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                                 now = datetime.datetime.now()
                                 AMPM = ""
