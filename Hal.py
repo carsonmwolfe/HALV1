@@ -22,7 +22,17 @@ json_Upcoming=json.loads(Upcoming)
 
 
 
+
+
 print("Hal is Booting up...")
+
+countdowntimer = str(json_Upcoming[0]["launch_date_local"])
+s = countdowntimer.split('T')
+a = s[1].split('-')
+
+pogger =  a[0] - datetime.datetime.now()
+print (pogger)
+
 Startup = datetime.datetime.now()
 CREATOR_ID=653386075095695361
 HAL_ID=663923530626367509
@@ -448,7 +458,6 @@ async def on_message(message):
         message.guild.voice_client.resume()
         
     if str(message.content).upper().upper() == ("*SKIP"):
-        
         skip = True 
         if message.author.id == MusicAuthorID:
             if Player!=None:
