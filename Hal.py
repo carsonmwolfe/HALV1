@@ -10,7 +10,7 @@ import pafy
 import logging
 from typing import Dict
 import aiohttp
-from lxml import etree
+from xml import etree
 import requests
 import json
 
@@ -112,7 +112,7 @@ async def on_message(message):
     global Queuetitle
     global Queue
     global QueueList
-    global Music_SOS
+   
     global Live
 
     user = message.guild.get_member(HAL_ID)
@@ -179,8 +179,6 @@ async def on_message(message):
                 em.set_author(name="Volume Number Invalid")
                 await message.channel.send(embed=em)
 
-  
-
     if str(message.content).upper() == ("*LAUNCHES"):
         em = discord.Embed(title=  "Latest Launch", description=("**" + "Misson Name:\n" + "**" + "``" + str(json_Latest["mission_name"]) + "``\n" + "**" "Rocket Model:\n" + "**" + "``"+ str(json_Latest["rocket"]["rocket_name"] + "``\n" + "**" + "Launch Time:\n" + "**" + "``" + str(json_Latest["launch_date_local"] + "``"))), colour=3447003)
         em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
@@ -191,12 +189,6 @@ async def on_message(message):
         em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
         em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
         await message.channel.send( embed=em)
-        
-
-
-
-        
-        
     
     if str(message.content).upper().startswith("*PLAY|"):
         skip = False
@@ -265,8 +257,7 @@ async def on_message(message):
                             BIC = str(minutes)+":"+str(seconds)
                 
                 if video.length < 1:
-                    Live = True
-                    
+                    Live = True     
                 Player = await YTDLSource.from_url(link,loop = client.loop)
                 MusicAuthorID = message.author.id
                 while message.guild.voice_client == None:
@@ -327,7 +318,6 @@ async def on_message(message):
                                 AIC = str(minute)+":"+"0"+str(second)
                             else:
                                 AIC = str(minute)+":"+str(second)
-                
                         em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                         em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                         now = datetime.datetime.now()
@@ -341,7 +331,6 @@ async def on_message(message):
                         em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
                         await Music_SOS.edit(embed=em)
                         if pause == True:
-                           
                             em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  "Paused" + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n" + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                             em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                             now = datetime.datetime.now()
@@ -355,7 +344,6 @@ async def on_message(message):
                             em.set_footer(text="Hal | {:%b, %d %Y}".format(today) + " at " + str(hour) + ":" +  str(now.minute) + AMPM)
                             await Music_SOS.edit(embed=em)
                         if background == sec:
-                        
                             em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + "``" + '**' + "Song Has Ended" + "**" +  '``'), colour=3447003)
                             em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                             now = datetime.datetime.now()
@@ -372,6 +360,10 @@ async def on_message(message):
                             if len(Queue) >0:
                                 background = 0
                                 second = 0
+                                print ("Second" + str(second))
+                                print ("Background" + str(background))
+                                print ("AIC" + str(AIC))
+                                print ("BIC" + str(BIC))
                                 currentlyplaying = True
                                 Player = await YTDLSource.from_url(Queue[0][1],loop = client.loop)
                                 sec = Player.data["duration"]
@@ -392,8 +384,11 @@ async def on_message(message):
                                     else:
                                         CIC = str(minutes)+":"+str(seconds)
                                 Queue.remove(Queue[0])
+        
+                                QueueList = ""
+                                for x in Queue:
+                                    QueueList += "\n" + "["+ x[0][0] + "]" "("+x[1]+")"
                                 message.guild.voice_client.play(Player)
-                    
                                 em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(CIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                                 now = datetime.datetime.now()
@@ -453,6 +448,7 @@ async def on_message(message):
         message.guild.voice_client.resume()
         
     if str(message.content).upper().upper() == ("*SKIP"):
+        
         skip = True 
         if message.author.id == MusicAuthorID:
             if Player!=None:
