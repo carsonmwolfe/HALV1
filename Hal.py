@@ -413,7 +413,7 @@ async def on_message(message):
                             em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                             em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                             em.set_footer(text=str(Footer))
-                            await Music_SOS.edit(embed=em)
+                            await Music_SOS.edit(embed=em)          
             
                 if second == 59:
                     minute = int(minute)
@@ -438,6 +438,7 @@ async def on_message(message):
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 em.set_footer(text=str(Footer))
                 await message.channel.send(embed=em)
+        
                 #except IndexError:
                 #    await message.channel.send ("Could not find this video on YouTube.")
 
