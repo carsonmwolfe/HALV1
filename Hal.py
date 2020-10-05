@@ -114,6 +114,9 @@ async def on_ready():
     await client.change_presence(activity=discord.Game(name= "*Countdown", type = 1, url="https://www.youtube.com/watch?v=NiUmFQY3LNA"))
     #client.loop.add_task(background_loop())
 
+
+
+
 @client.event
 async def on_message(message):
     global Player
@@ -224,6 +227,9 @@ async def on_message(message):
         em.add_field(name="Owner Only", value="```"+ "*Restart" +"\n"+ "*Leave"  + "\n" .join(OO)+"```")
         em.set_footer(text=str(Footer))
         await message.channel.send(embed=em)
+
+    
+        
         
     if str(message.content).upper().startswith("*PLAY|"):
         skip = False
@@ -435,7 +441,13 @@ async def on_message(message):
                 #except IndexError:
                 #    await message.channel.send ("Could not find this video on YouTube.")
 
-                
+    if str(message.content).upper() == ("*QUEUE"):
+        em = discord.Embed(colour = 3447033)
+        em = discord.Embed(title= "Queue", description=(QueueList), colour=3447003)
+        em.set_footer(text=str(Footer))
+        await message.channel.send(embed = em)
+
+          
     if str(message.content).upper().startswith("*VOLUME|"):
         if Player == None:
             em = discord.Embed(colour=3447003)
