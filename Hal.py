@@ -114,9 +114,6 @@ async def on_ready():
     await client.change_presence(activity=discord.Game(name= "*Countdown", type = 1, url="https://www.youtube.com/watch?v=NiUmFQY3LNA"))
     #client.loop.add_task(background_loop())
 
-
-
-
 @client.event
 async def on_message(message):
     global Player
@@ -137,7 +134,8 @@ async def on_message(message):
     global QueueList
     global volume
     global Live
-
+    global AIC
+    
     AMPM = ""
     hour = now.hour
     if now.hour < 13:
@@ -153,26 +151,22 @@ async def on_message(message):
         channel = message.author.voice.channel
     except Exception as e:
         print (e)
-        print("Author not in voice channel")
-        
+        print("Author not in voice channel") 
     if str(message.content).upper() == ("*TEST"):
         em = discord.Embed(colour = 3447033)
         em.set_author(name="Test Complete")
         await message.channel.send(embed = em)
-
     if str(message.content).upper() == ("*LEAVE"):
         await message.guild.voice_client.disconnect()
         em = discord.Embed(colour=3447003)
         em.set_author(name="Hal has been disconnect from the voice channel")
         Player = None
         await message.channel.send(embed=em)
-
     if str(message.content).upper() == ("*RESTART"):
         if message.author.id!=CREATOR_ID:
             em = discord.Embed(colour=3447003)
             em.set_author(name="This Command Is A Creator Only Command.")
             await message.channel.send(embed=em)
-
         if message.author.id==CREATOR_ID:
             em = discord.Embed(colour=3447003)
             em.set_author(name="Hal is restarting...")
@@ -180,19 +174,16 @@ async def on_message(message):
             client.loop.run_until_complete(client.logout())
             os.system("python3 /usr/bin/python3.6 /home/pi/Hal.py")
             raise SystemExit
-    
     if str(message.content).upper().upper()==("*MOVE"):
         await user.edit(voice_channel = channel)
         em = discord.Embed(colour=3447003)
         em.set_author(name = "Hal Has moved channels")
         await message.channel.send(embed=em)
-
     if str(message.content).upper() == ("*STATUS"):
         em = discord.Embed(title="Status Update" , description=("Number of Fatal Errors: 0" + "\n" + "Last Restarted: " + str(datetime.datetime.now() - Startup) + " ago"), colour=3447003)
         em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
         em.set_footer(text=str(Footer))
         await message.channel.send(embed=em)
-     
     if str(message.content).upper() == ("*LAUNCHES"):
         em = discord.Embed(title=  "Latest Launch", description=("**" + "Misson Name:\n" + "**" + "``" + str(json_Latest["mission_name"]) + "``\n" + "**" "Rocket Model:\n" + "**" + "``"+ str(json_Latest["rocket"]["rocket_name"] + "``\n" + "**" + "Launch Time:\n" + "**" + "``" + str(json_Latest["launch_date_local"] + "``"))), colour=3447003)
         em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
@@ -207,7 +198,6 @@ async def on_message(message):
         em = discord.Embed(colour=3447003)
         em.set_author(name =  str(looplaunch).split('.')[0] +  " Until Next SpaceX Launch!")
         await message.channel.send(embed=em)
-
     if str(message.content).upper() == ("*LAUNCHMODE"):
         em = discord.Embed(colour=15158332)
         em.set_author(name = "Launch Mode Activated... \nSending Info about todays launch")
@@ -216,7 +206,6 @@ async def on_message(message):
         em.set_author(name="")
         em.set_footer(text=str(Footer))
         await message.channel.send(embed=em)
-
     if str(message.content).upper()==('*HELP'):
         misc=[]
         musc=[]
@@ -227,10 +216,6 @@ async def on_message(message):
         em.add_field(name="Owner Only", value="```"+ "*Restart" +"\n"+ "*Leave"  + "\n" .join(OO)+"```")
         em.set_footer(text=str(Footer))
         await message.channel.send(embed=em)
-
-    
-        
-        
     if str(message.content).upper().startswith("*PLAY|"):
         skip = False
         pause = False
@@ -238,6 +223,7 @@ async def on_message(message):
         songended = False 
         MusicAuthorID == message.author.id
         paused = False
+        secondoffset = 0 
         starttime = datetime.datetime.now()
         if message.guild.voice_client == None:
             channel=message.author.voice.channel
@@ -285,7 +271,6 @@ async def on_message(message):
                 em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
                 await message.channel.send(embed = em)
                 return
-            #try:
             query_string = urllib.parse.urlencode({"search_query" : str(message.content).split('|')[1]})
             req = "http://www.youtube.com/results?"+query_string
             with urllib.request.urlopen(req) as html:
@@ -328,11 +313,15 @@ async def on_message(message):
             Music_SOS = await message.channel.send(embed=em)
             message.guild.voice_client.play(Player)
             currentlyplaying = True
-            while background > sec or second < sec  or skip or Live == False:
+            while background > sec or second < video.length or skip or Live == False or background == sec:
+                if skip == True:
+                    break
+                import time
+                timenow = datetime.datetime.now()
                 skip = False
                 background +=1
                 time.sleep(1)
-                second +=1
+                second = (timenow - starttime).seconds + secondoffset
                 if Live == True:
                     em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  "Now Streaming" + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + str(volume) + "``" + "\n" + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                     em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
@@ -368,6 +357,7 @@ async def on_message(message):
                         await Music_SOS.edit(embed=em)
                     if background == sec or skip == True:
                         background = 0
+                        timenow = datetime.datetime.now()
                         second = 0
                         print ("Song is done")
                         em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + "``" + '**' + "Song Has Ended" + "**" +  '``'), colour=3447003)
@@ -375,13 +365,19 @@ async def on_message(message):
                         em.set_footer(text=str(Footer))
                         await Music_SOS.edit(embed=em)
                         currentlyplaying = False
-                        songended = True 
-                       
+                        if songended == True:
+                            break
                         if len(Queue) < 0:
                             break 
                         if len(Queue) > 0:
+                            print("Queue Start")
+                            print (sec)
+                            print (second)
+                            print (background)
                             background = 0
                             second = 0
+                            secondoffset = 0
+                            starttime = datetime.datetime.now()
                             currentlyplaying = True
                             Player = await YTDLSource.from_url(Queue[0][1],loop = client.loop)
                             sec = Player.data["duration"]
@@ -407,21 +403,35 @@ async def on_message(message):
                                 QueueList += "\n" + "["+ x[0][0] + "]" "("+x[1]+")"
                             if len(Queue)<1:
                                 QueueList="\nNo Songs In Queue"
-                                
                             message.guild.voice_client.play(Player)
-                            skip = False 
+                            skip = False
+                            if Live == False:
+                                if hour > 0:
+                                    minute = int(minute)-(hourbruh*60)
+                                    if len(str(minute))== 1:
+                                        minute= "0" + str(minute)
+                                    if len(str(second)) == 1:
+                                        AIC= str(minute)+":"+"0"+str(second)
+                                    else:
+                                        AIC = str(minute)+":"+str(second)
+                                else:
+                                    if len(str(second)) ==1:
+                                        AIC = str(minute)+":"+"0"+str(second)
+                                    else:
+                                        AIC = str(minute)+":"+str(second)
+                            print (second)
                             em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                             em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                             em.set_footer(text=str(Footer))
                             await Music_SOS.edit(embed=em)          
-            
-                if second == 59:
+                if second >= 59:
                     minute = int(minute)
-                    second = 0
+                    secondoffset -= 60
                     minute += 1
+                    await Music_SOS.delete()
+                    Music_SOS = await message.channel.send(embed = em)
                 if minute == 60:
                     minute = int(minute)
-                    second = 0
                     minute = 0
                     hourbruh += 1    
             else:
@@ -438,7 +448,10 @@ async def on_message(message):
                 em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                 em.set_footer(text=str(Footer))
                 await message.channel.send(embed=em)
-        
+
+            secondoffset = 0
+            second = 0 
+            starttime = datetime.datetime.now()
                 #except IndexError:
                 #    await message.channel.send ("Could not find this video on YouTube.")
 
@@ -480,11 +493,15 @@ async def on_message(message):
         message.guild.voice_client.resume()
         
     if str(message.content).upper().upper() == ("*SKIP"):
-        skip = True 
+        skip = True
         if message.author.id == MusicAuthorID:
             if Player!=None:
                 if message.guild.voice_client.is_playing():
                     message.guild.voice_client.stop()
+                    second = 0
+                    background = 0
+                    starttime = datetime.datetime.now()
+                    secondoffset = 0      
             em = discord.Embed(colour=3447003)
             em = discord.Embed(title="Skipped By " + str(message.author), icon_url=message.author.avatar_url , description=("Skipped Song: " + Player.title), colour=3447003)
             em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
