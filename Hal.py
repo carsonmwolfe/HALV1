@@ -222,9 +222,7 @@ async def on_message(message):
         resume = False
         songended = False 
         MusicAuthorID == message.author.id
-        paused = False
-        secondoffset = 0 
-        starttime = datetime.datetime.now()
+        paused = False 
         if message.guild.voice_client == None:
             channel=message.author.voice.channel
             await channel.connect()
@@ -311,6 +309,8 @@ async def on_message(message):
             em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
             em.set_footer(text=str(Footer))
             Music_SOS = await message.channel.send(embed=em)
+            starttime = datetime.datetime.now()
+            secondoffset = 0
             message.guild.voice_client.play(Player)
             currentlyplaying = True
             while background > sec or second < video.length or skip or Live == False or background == sec:
