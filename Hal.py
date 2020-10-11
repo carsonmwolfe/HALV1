@@ -259,12 +259,6 @@ async def on_message(message):
         if currentlyplaying == False:
             currentlyplaying == True
             print ("XD")
-            minute = 0
-            second = 0 
-            hourbruh = 0
-            background = 0
-            starttime = datetime.datetime.now()
-            secondoffset = 0
             if channel == None:
                 em = discord.Embed(colour = 3447033)
                 em.set_author(name="Please join a voice channel to start a song")
@@ -311,6 +305,12 @@ async def on_message(message):
             em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
             em.set_footer(text=str(Footer))
             Music_SOS = await message.channel.send(embed=em)
+            minute = 0
+            second = 0 
+            hourbruh = 0
+            background = 0
+            starttime = datetime.datetime.now()
+            secondoffset = 0
             message.guild.voice_client.play(Player)
             currentlyplaying = True
             while background > sec or second < video.length or skip or Live == False or background == sec:
