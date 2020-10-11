@@ -258,11 +258,13 @@ async def on_message(message):
                     QueueList += "\n" + "["+ str(x[0])+ "]" + "("+str(x[1])+")"    
         if currentlyplaying == False:
             currentlyplaying == True
-            print ("0")
+            print ("XD")
             minute = 0
             second = 0 
             hourbruh = 0
             background = 0
+            starttime = datetime.datetime.now()
+            secondoffset = 0
             if channel == None:
                 em = discord.Embed(colour = 3447033)
                 em.set_author(name="Please join a voice channel to start a song")
@@ -309,8 +311,6 @@ async def on_message(message):
             em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
             em.set_footer(text=str(Footer))
             Music_SOS = await message.channel.send(embed=em)
-            starttime = datetime.datetime.now()
-            secondoffset = 0
             message.guild.voice_client.play(Player)
             currentlyplaying = True
             while background > sec or second < video.length or skip or Live == False or background == sec:
@@ -351,7 +351,7 @@ async def on_message(message):
                         em.set_footer(text=str(Footer))
                         await Music_SOS.edit(embed=em)
                     if loop == True:
-                        em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + "``" + '**' + "Song Looped" + "**" +  '``'), colour=3447003)
+                        em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + "``" + str(AIC) + "/" + str(BIC) + "`" + '**' + "Song Looped" + "**" +  '``'), colour=3447003)
                         em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                         em.set_footer(text=str(Footer))
                         await Music_SOS.edit(embed=em)
@@ -367,7 +367,7 @@ async def on_message(message):
                         currentlyplaying = False
                         if songended == True:
                             break
-                        if len(Queue) < 0:
+                        if len(Queue) == 0:
                             break 
                         if len(Queue) > 0:
                             print("Queue Start")
@@ -378,6 +378,8 @@ async def on_message(message):
                             second = 0
                             secondoffset = 0
                             starttime = datetime.datetime.now()
+                            timenow = datetime.datetime.now()
+                            second = (timenow - starttime).seconds + secondoffset
                             currentlyplaying = True
                             Player = await YTDLSource.from_url(Queue[0][1],loop = client.loop)
                             sec = Player.data["duration"]
@@ -406,30 +408,34 @@ async def on_message(message):
                             message.guild.voice_client.play(Player)
                             skip = False
                             if Live == False:
+                                second = 0
+                                minute = 0 
                                 if hour > 0:
                                     minute = int(minute)-(hourbruh*60)
                                     if len(str(minute))== 1:
                                         minute= "0" + str(minute)
                                     if len(str(second)) == 1:
-                                        AIC= str(minute)+":"+"0"+str(second)
+                                        CIC= str(minute)+":"+"0"+str(second)
                                     else:
-                                        AIC = str(minute)+":"+str(second)
+                                        CIC = str(minute)+":"+str(second)
                                 else:
                                     if len(str(second)) ==1:
-                                        AIC = str(minute)+":"+"0"+str(second)
+                                        CIC = str(minute)+":"+"0"+str(second)
                                     else:
-                                        AIC = str(minute)+":"+str(second)
-                            print (second)
-                            em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(AIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
+                                        CIC = str(minute)+":"+str(second)
+                            print (CIC)
+                            em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(CIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                             em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                             em.set_footer(text=str(Footer))
-                            await Music_SOS.edit(embed=em)          
+                            await Music_SOS.edit(embed=em)
+
+                if second == 30:
+                    await Music_SOS.delete()
+                    Music_SOS = await message.channel.send(embed = em)
                 if second >= 59:
                     minute = int(minute)
                     secondoffset -= 60
                     minute += 1
-                    await Music_SOS.delete()
-                    Music_SOS = await message.channel.send(embed = em)
                 if minute == 60:
                     minute = int(minute)
                     minute = 0
@@ -479,6 +485,7 @@ async def on_message(message):
                 em = discord.Embed(colour=3447003)
                 em.set_author(name="Volume Number Invalid")
                 await message.channel.send(embed=em)
+                
 
     if str(message.content).upper().upper() == ("*LOOP"):
         loop = True 
