@@ -272,9 +272,13 @@ async def on_message(message):
                 #searchresults = re.findall(r'href=\"\/watch\?v=(.{11})', html.read().decode())
                 link = ("http://www.youtube.com/watch?v=" + searchresults[0])
                 url = (link)
-                video = pafy.new(url)
-                minutes = int(video.length/60)
-                seconds = int(video.length-(minutes*60))
+                Player = await YTDLSource.from_url(link,loop = client.loop)
+                MusicAuthorID = message.author.id
+                while message.guild.voice_client == None:
+                    await message.guild.voice_client.play(Player)
+                Player = await YTDLSource.from_url(link,loop = client.loop)
+                minutes = int(Player.duration/60)
+                seconds = int(Player.duration-(minutes*60))
                 hours = int(minutes/60)
                 if hours > 0:
                     minutes = minutes-(hours*60)
@@ -290,15 +294,10 @@ async def on_message(message):
                     else:
                         BIC = str(minutes)+":"+str(seconds)
             
-            if video.length < 1:
+            if Player.duration < 1:
                 Live = True    
-            Player = await YTDLSource.from_url(link,loop = client.loop)
-            MusicAuthorID = message.author.id
-            while message.guild.voice_client == None:
-                await message.guild.voice_client.play(Player)
-            Player = await YTDLSource.from_url(link,loop = client.loop)
             import time
-            sec = video.length
+            sec = Player.duration
             currentlyplaying == True
             title = Player.title
             em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`' + "0:00"  + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + str(volume) + "``" + "\n" + "**" +  "Queue:" + "**" +  "\nNo Songs In Queue" ), colour=3447003)
@@ -313,7 +312,7 @@ async def on_message(message):
             secondoffset = 0
             message.guild.voice_client.play(Player)
             currentlyplaying = True
-            while background > sec or second < video.length or skip or Live == False or background == sec:
+            while background > sec or second < Player.duration or skip or Live == False or background == sec:
                 if skip == True:
                     break
                 import time
@@ -364,6 +363,7 @@ async def on_message(message):
                         em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                         em.set_footer(text=str(Footer))
                         await Music_SOS.edit(embed=em)
+                        await Music_SOS.delete()
                         currentlyplaying = False
                         if songended == True:
                             break
