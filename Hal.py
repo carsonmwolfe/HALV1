@@ -67,6 +67,7 @@ skip = False
 pause = False
 resume = False
 loop = False
+Leave = False
 currentlyplaying = False
 Queuetitle = None
 Music_SOS = None
@@ -124,6 +125,7 @@ async def on_message(message):
     global MusicAuthorID
     global start
     global skip
+    global Leave
     global pause
     global loop
     global resume
@@ -155,13 +157,7 @@ async def on_message(message):
     if str(message.content).upper() == ("*TEST"):
         em = discord.Embed(colour = 3447033)
         em.set_author(name="Test Complete")
-        await message.channel.send(embed = em)
-    if str(message.content).upper() == ("*LEAVE"):
-        await message.guild.voice_client.disconnect()
-        em = discord.Embed(colour=3447003)
-        em.set_author(name="Hal has been disconnect from the voice channel")
-        Player = None
-        await message.channel.send(embed=em)
+        await message.channel.send(embed = em)    
     if str(message.content).upper() == ("*RESTART"):
         if message.author.id!=CREATOR_ID:
             em = discord.Embed(colour=3447003)
@@ -211,12 +207,14 @@ async def on_message(message):
         musc=[]
         OO=[]
         em = discord.Embed(title='Help',description="** *HelpCommands for command-specific information**",colour=DARK_NAVY)
-        em.add_field(name="Music", value ="```"+"*PLAY" + "\n" + "*VOLUME" + "\n"+ "*RESUME" + "\n" + "*PAUSE" + "\n" + "*SKIP" + "\n"  + "*LOOP"  + "\n".join(musc) + "```")
+        em.add_field(name="Music", value ="```"+"*PLAY|" + "\n" + "*QUEUE" + "\n" + "*VOLUME" + "\n"+ "*RESUME" + "\n" + "*PAUSE" + "\n" + "*SKIP" + "\n"  + "*LOOP"  + "\n".join(musc) + "```")
         em.add_field(name="Miscellaneous", value="```"+ "*TEST" + "\n" + "*STATUS" + "\n" + "*UPCOMING" + "\n" + "*COUNTDOWN" + "\n" + "*LAUNCHMODE" + "\n".join(misc) + "```")
         em.add_field(name="Owner Only", value="```"+ "*Restart" +"\n"+ "*Leave"  + "\n" .join(OO)+"```")
         em.set_footer(text=str(Footer))
         await message.channel.send(embed=em)
+        
     if str(message.content).upper().startswith("*PLAY|"):
+        Leave = False
         skip = False
         pause = False
         resume = False
@@ -258,7 +256,6 @@ async def on_message(message):
                     QueueList += "\n" + "["+ str(x[0])+ "]" + "("+str(x[1])+")"    
         if currentlyplaying == False:
             currentlyplaying == True
-            print ("XD")
             if channel == None:
                 em = discord.Embed(colour = 3447033)
                 em.set_author(name="Please join a voice channel to start a song")
@@ -280,12 +277,13 @@ async def on_message(message):
                 minutes = int(Player.duration/60)
                 seconds = int(Player.duration-(minutes*60))
                 hours = int(minutes/60)
+                #minutes-=hours*60
                 if hours > 0:
                     minutes = minutes-(hours*60)
                     if len(str(minutes))==1:
                         minutes="0"+str(minutes)
                     if len(str(seconds)) == 1:
-                        BIC= str(hours)+":"+"0"+str(seconds)
+                        BIC= str(hours)+":"+str(minutes)+":"+"0"+str(seconds)
                     else:
                         BIC = str(hours)+":"+str(minutes)+":"+str(seconds)
                 else:
@@ -293,7 +291,6 @@ async def on_message(message):
                         BIC = str(minutes)+":"+"0"+str(seconds)
                     else:
                         BIC = str(minutes)+":"+str(seconds)
-            
             if Player.duration < 1:
                 Live = True    
             import time
@@ -312,7 +309,9 @@ async def on_message(message):
             secondoffset = 0
             message.guild.voice_client.play(Player)
             currentlyplaying = True
-            while background > sec or second < Player.duration or skip or Live == False or background == sec:
+            while background > sec or skip or Leave or Live == False or background == sec:
+                if Leave == True:
+                    break
                 if skip == True:
                     break
                 import time
@@ -344,6 +343,8 @@ async def on_message(message):
                     em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                     em.set_footer(text=str(Footer))
                     await Music_SOS.edit(embed=em)
+                    
+                        
                     if pause == True:
                         em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  "Paused" + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + str(volume) + "``" + "\n" + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                         em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
@@ -354,7 +355,7 @@ async def on_message(message):
                         em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                         em.set_footer(text=str(Footer))
                         await Music_SOS.edit(embed=em)
-                    if background == sec or skip == True:
+                    if background == sec or Leave or skip == True:
                         background = 0
                         timenow = datetime.datetime.now()
                         second = 0
@@ -417,7 +418,7 @@ async def on_message(message):
                                     if len(str(second)) == 1:
                                         CIC= str(minute)+":"+"0"+str(second)
                                     else:
-                                        CIC = str(minute)+":"+str(second)
+                                        CIC = str(hours)+":"+str(minutes)+":"+str(seconds)
                                 else:
                                     if len(str(second)) ==1:
                                         CIC = str(minute)+":"+"0"+str(second)
@@ -427,7 +428,8 @@ async def on_message(message):
                             em = discord.Embed(title="" , description=("["+ Player.title + "]" "("+link+")"+ "\n" + '**' + 'Duration: ' + '**' + '`'  +  str(CIC) + "/" + str(BIC) + "`" +   '\n' + '**' + 'Volume:  '+ '**' + "``" + "100%" + "``" + "\n"  + "**" + "Queue:" + "**" + str(QueueList)), colour=3447003)
                             em.set_author(name="Selected By: " + str(message.author),icon_url=message.author.avatar_url)
                             em.set_footer(text=str(Footer))
-                            await Music_SOS.edit(embed=em)
+                            Music_SOS = await message.channel.send(embed = em)
+                            #await Music_SOS.edit(embed=em)
 
                 if second == 30:
                     await Music_SOS.delete()
@@ -466,8 +468,16 @@ async def on_message(message):
         em = discord.Embed(title= "Queue", description=(QueueList), colour=3447003)
         em.set_footer(text=str(Footer))
         await message.channel.send(embed = em)
-
-          
+        
+    if str(message.content).upper() == ("*LEAVE"):
+        Leave = True
+        Queue = []
+        await message.guild.voice_client.disconnect()
+        em = discord.Embed(colour=3447003)
+        em.set_author(name="Hal has been disconnect from the voice channel")
+        #Player = None
+        await message.channel.send(embed=em)
+        
     if str(message.content).upper().startswith("*VOLUME|"):
         if Player == None:
             em = discord.Embed(colour=3447003)
@@ -485,8 +495,6 @@ async def on_message(message):
                 em = discord.Embed(colour=3447003)
                 em.set_author(name="Volume Number Invalid")
                 await message.channel.send(embed=em)
-                
-
     if str(message.content).upper().upper() == ("*LOOP"):
         loop = True 
     if str(message.content).upper().upper() == ("*PAUSE"):
