@@ -332,14 +332,14 @@ async def on_message(message):
                     em.set_footer(text=str(Footer))
                     await Music_SOS.edit(embed=em)
                 if Live == False:
-                    if hour > 0:
+                    if hourbruh > 0:
                         minute = int(minute)-(hourbruh*60)
                         if len(str(minute))== 1:
                             minute= "0" + str(minute)
                         if len(str(second)) == 1:
-                            AIC= str(minute)+":"+"0"+str(second)
+                            AIC= str(hourbruh)+":"+str(minutes)+":"+"0"+str(seconds)
                         else:
-                            AIC = str(minute)+":"+str(second)
+                            AIC = str(hoursbruh)+":"+str(minutes)+":"+str(seconds)
                     else:
                         if len(str(second)) ==1:
                             AIC = str(minute)+":"+"0"+str(second)
