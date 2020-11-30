@@ -1,5 +1,5 @@
 import discord
-import TokenDoc
+import DEVHALTokenDoc
 import youtube_dl
 import os
 import re
@@ -14,50 +14,30 @@ from lxml import etree
 import requests
 import json
 import ffmpeg
+import asyncio
 
-Latest = requests.get("https://api.spacexdata.com/v3/launches/latest").text
-json_Latest=json.loads(Latest)
-
-Upcoming = requests.get("https://api.spacexdata.com/v3/launches/upcoming").text
-json_Upcoming=json.loads(Upcoming)
-
-
-today = datetime.date.today()
-now = datetime.datetime.now()
 
 print("Hal is Booting up...")
 
-liftoff = str(now)
-countdowntimer = str(json_Upcoming[0]["launch_date_local"])
-s = countdowntimer.split('T')
-a = s[0].split('-')
-t = s[1].split('-')
-u = t[0].split(',')
-v = u[0].split(':')
-launch = a + v
-launchtime = []
-for e in launch:
-    launchtime.append(int (e))
-    
-launchtime[3]=launchtime[3]-4   
-launchdatetime = datetime.datetime(*launchtime)
-looplaunch = launchdatetime-now
 
 Startup = datetime.datetime.now()
 CREATOR_ID=653386075095695361
-HAL_ID=663923530626367509
+HAL_ID=779155599622537226
 
 time_message=None
 PREVIOUS_VIDEO=None
 time_message=None
 time_s = 0
 
+
 client = discord.Client()
 Player = None
 Memberinfo = []
 Blocked=[]
 Voice=[]
+Users = []
 Queue = []
+Leaderboard = []
 volume = "100%"
 
 EMBEDCOLOR = 3447033
@@ -73,6 +53,9 @@ Queuetitle = None
 Music_SOS = None
 Live = False
 songended = False
+ResumeMSG = False
+PauseMSG = False
+
 
 ytdl_format_options = {
     'format': 'bestaudio/best',
@@ -84,6 +67,7 @@ ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 ffmpeg_options = {
     'options': '-vn'
 }
+
               
 class YTDLSource(discord.PCMVolumeTransformer):
     def __init__(MS,source,*,data,volume=1.0):
@@ -113,8 +97,28 @@ class YTDLSource(discord.PCMVolumeTransformer):
 async def on_ready():
     import time
     await client.change_presence(activity=discord.Game(name= "*Countdown", type = 1, url="https://www.youtube.com/watch?v=NiUmFQY3LNA"))
-    #client.loop.add_task(background_loop())
 
+@client.event
+async def on_voice_state_update(member, before, after):
+    try:
+        server = after.channel.guild
+    except AttributeError:
+        server = before.channel.guild
+    user = server.get_member(HAL_ID)
+    users = []
+    if before !=None and server.get_member(HAL_ID).voice !=None:
+        if before.channel != server.get_member(HAL_ID).voice.channel:
+            return
+    try:
+        for user in server.get_member(HAL_ID).voice.channel.members:
+            if user.bot == False:
+                users.append(user)
+        if len(users)==0:
+            server.voice_client.pause()
+            print("paused")     
+    except AttributeError:
+        print("Error")            
+            
 @client.event
 async def on_message(message):
     global Player
@@ -137,7 +141,42 @@ async def on_message(message):
     global volume
     global Live
     global AIC
-    
+    global ResumeMSG
+    global PauseMSG
+
+
+    today = datetime.date.today()
+    now = datetime.datetime.now()
+
+
+    Latest = requests.get("https://api.spacexdata.com/v3/launches/latest").text
+    json_Latest=json.loads(Latest)
+
+    Upcoming = requests.get("https://api.spacexdata.com/v3/launches/upcoming").text
+    json_Upcoming=json.loads(Upcoming)
+
+    liftoff = str(now)
+    countdowntimer = str(json_Upcoming[0]["launch_date_local"])
+    s = countdowntimer.split('T')
+    a = s[0].split('-')
+    t = s[1].split('-')
+    u = t[0].split(',')
+    v = u[0].split(':')
+    launch = a + v
+    launchtime = []
+    for e in launch:
+        launchtime.append(int (e))
+        
+    launchtime[3]=launchtime[3]-4   
+    launchdatetime = datetime.datetime(*launchtime)
+    looplaunch = launchdatetime-now
+
+
+    leaderboard_string = "```  # Username             # Of Gifs Sent\n -----------------------------------------```"
+
+    if str(message.content).startswith("https://tenor.com"):
+        print("gif added")
+       
     AMPM = ""
     hour = now.hour
     if now.hour < 13:
@@ -153,28 +192,20 @@ async def on_message(message):
         channel = message.author.voice.channel
     except Exception as e:
         print (e)
-        print("Author not in voice channel") 
+         
     if str(message.content).upper() == ("*TEST"):
-        em = discord.Embed(colour=3447003)
-        em = discord.Embed(title="", description=("``Test Complete``"), colour=3447003)
-        await message.channel.send(embed=em)   
+        await message.channel.send("`Test Complete`")   
     if str(message.content).upper() == ("*RESTART"):
         if message.author.id!=CREATOR_ID:
-            em = discord.Embed(colour=3447003)
-            em.set_author(name="This Command Is A Creator Only Command.")
-            await message.channel.send(embed=em)
+            await message.channel.send("`This Command Is A Creator Only Command.`")
         if message.author.id==CREATOR_ID:
-            em = discord.Embed(colour=3447003)
-            em = discord.Embed(title="", description=("``Hal Is Restarting...``"), colour=3447003)
-            await message.channel.send(embed=em)
+            await message.channel.send("`Hal Is Restarting...`")
             client.loop.run_until_complete(client.logout())
             os.system("python3 /usr/bin/python3.6 /home/pi/Hal.py")
             raise SystemExit
     if str(message.content).upper().upper()==("*MOVE"):
         await user.edit(voice_channel = channel)
-        em = discord.Embed(colour=3447003)
-        em.set_author(name = "Hal Has moved channels")
-        await message.channel.send(embed=em)
+        await message.channel.send("`Hal Has moved channels`")
     if str(message.content).upper() == ("*STATUS"):
         em = discord.Embed(title="Status Update" , description=("Number of Fatal Errors: 0" + "\n" + "Last Restarted: " + str(datetime.datetime.now() - Startup) + " ago"), colour=3447003)
         em.set_author(name="Checked by " + str(message.author),icon_url=message.author.avatar_url)
@@ -211,7 +242,7 @@ async def on_message(message):
         em.set_footer(text=str(Footer))
         await message.channel.send(embed=em)
         
-    if str(message.content).upper().startswith("*PLAY|"):
+    if str(message.content).upper().startswith("!PLAY|"):
         Leave = False
         skip = False
         pause = False
@@ -228,14 +259,9 @@ async def on_message(message):
             QueueList="\nNo Songs In Queue"
         if currentlyplaying == True:
             if channel == None:
-                em = discord.Embed(colour = 3447033)
-                em.set_author(name="Please join a voice channel to start a song")
-                em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
-                await message.channel.send(embed = em)
+                await message.channel.send("`Please join a voice channel to start a song`")
                 return
-            em = discord.Embed(colour=3447003)
-            em = discord.Embed(title="", description=("```Song Added To Queue```"), colour=3447003)
-            await message.channel.send(embed = em)
+            await message.channel.send("`Song Added To Queue`")
             query_string = urllib.parse.urlencode({"search_query" : str(message.content).split('|')[1]})
             req = "http://www.youtube.com/results?"+query_string
             with urllib.request.urlopen(req) as html:
@@ -263,10 +289,7 @@ async def on_message(message):
         if currentlyplaying == False:
             currentlyplaying == True
             if channel == None:
-                em = discord.Embed(colour = 3447033)
-                em.set_author(name="Please join a voice channel to start a song")
-                em.set_footer(text="Hal | {:%b, %d %Y}".format(today))
-                await message.channel.send(embed = em)
+                await message.channel.send("`Please join a voice channel to start a song`")
                 return
             query_string = urllib.parse.urlencode({"search_query" : str(message.content).split('|')[1]})
             req = "http://www.youtube.com/results?"+query_string
@@ -465,32 +488,41 @@ async def on_message(message):
             starttime = datetime.datetime.now()
                 #except IndexError:
                 #    await message.channel.send ("Could not find this video on YouTube.")
+                
 
+        if currentlyplaying == False and len(Queue) == 0:
+            await asyncio.sleep(30)
+            await message.guild.voice_client.disconnect()
+            LeaveMSG = await message.channel.send("`Hal Has left the voice channel`")
+            await asyncio.sleep(120)
+            await LeaveMSG.delete()    
+            
     if str(message.content).upper() == ("*QUEUE"):
         em = discord.Embed(colour = 3447033)
         em = discord.Embed(title= "Queue", description=(QueueList), colour=3447003)
         em.set_footer(text=str(Footer))
         await message.channel.send(embed = em)
-        
+
+    
+    if str(message.content).upper() == ("*GIFLB"):
+        em = discord.Embed(colour = 3447033)
+        em = discord.Embed(title= "GIF Leaderboard", description=(leaderboard_string), colour=3447003)
+        em.set_footer(text=str(Footer))
+        await message.channel.send(embed = em)
+
     if str(message.content).upper() == ("*LEAVE"):
         if Player == None:
-            em = discord.Embed(colour=3447003)
-            em.set_author(name = "Hal Is Not In A Voice Channel")
-            await message.channel.send(embed=em)
+            await message.channel.send("`Hal Is Not In A Voice Channel`")
         if Player != None:
             Leave = True
             Queue = []
             await message.guild.voice_client.disconnect()
-            em = discord.Embed(colour=3447003)
-            em.set_author(name="Hal has been disconnected from the voice channel")
             #Player = None
-            await message.channel.send(embed=em)
+            await message.channel.send("`Hal has been disconnected from the voice channel`")
         
     if str(message.content).upper().startswith("*VOLUME|"):
         if Player == None:
-            em = discord.Embed(colour=3447003)
-            em.set_author(name = "Hal Is Not In A Voice Channel")
-            await message.channel.send(embed=em)
+            await message.channel.send("`Hal Is Not In A Voice Channel`")
         if Player != None:
             Vol = Player.volume
             total= int(str(message.content).split('|')[1])
@@ -500,31 +532,25 @@ async def on_message(message):
                 volume = "{0}".format(str(total))+"%"
                 print (volume)
             if (total > 201 or total < 0):
-                em = discord.Embed(colour=3447003)
-                em.set_author(name="Volume Number Invalid")
-                
-                await message.channel.send(embed=em)
-                
+                await message.channel.send("`Volume Number Invalid`")
+
     if str(message.content).upper().upper() == ("*LOOP"):
         loop = True
+        
     if str(message.content).upper().upper() == ("*PAUSE"):
         pause = True
         resume = False
         message.guild.voice_client.pause()
+        
     if str(message.content).upper().upper() == ("*RESUME"):
+        await message.channel.send("`Music Resumed.`")
         resume = True
         pause= False
         message.guild.voice_client.resume()
+        
     if str(message.content).upper().upper() == ("*SKIP"):
         if Player == None:
-            em = discord.Embed(colour=3447003)
-            em.set_author(name = "Hal Is Not In A Voice Channel")
-            await message.channel.send(embed=em)
-        if len(Queue) == 0:
-            em = discord.Embed(colour=3447003)
-            em = discord.Embed(title="", description=("``No Songs In Que``"), colour=3447003)
-            await message.channel.send(embed=em)
-        if len(Queue) >=1:
+            await message.channel.send("`Hal is not in a voice channel`")
             skip = True
             if Player!=None:
                 if message.guild.voice_client.is_playing():
@@ -533,7 +559,6 @@ async def on_message(message):
                     background = 0
                     starttime = datetime.datetime.now()
                     secondoffset = 0      
-                em = discord.Embed(colour=3447003)
-                em = discord.Embed(title="", description=("``Song Skipped``"), colour=3447003)
-                await message.channel.send(embed=em)
-client.loop.run_until_complete(client.start(TokenDoc.token))
+                await message.channel.send("`Song Skipped`")
+                
+client.loop.run_until_complete(client.start(DEVHALTokenDoc.token))
