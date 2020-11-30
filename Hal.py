@@ -549,16 +549,17 @@ async def on_message(message):
         message.guild.voice_client.resume()
         
     if str(message.content).upper().upper() == ("*SKIP"):
+        skip = True
         if Player == None:
             await message.channel.send("`Hal is not in a voice channel`")
-            skip = True
-            if Player!=None:
-                if message.guild.voice_client.is_playing():
-                    message.guild.voice_client.stop()
-                    second = 0
-                    background = 0
-                    starttime = datetime.datetime.now()
-                    secondoffset = 0      
-                await message.channel.send("`Song Skipped`")
+        if Player!=None:
+            if message.guild.voice_client.is_playing():
+                message.guild.voice_client.stop()
+                second = 0
+                background = 0
+                songended = True
+                starttime = datetime.datetime.now()
+                secondoffset = 0
+            await message.channel.send("`Song Skipped`")
                 
 client.loop.run_until_complete(client.start(TokenDoc.token))
