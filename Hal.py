@@ -1,5 +1,5 @@
 import discord
-import DEVHALTokenDoc
+import TokenDoc
 import youtube_dl
 import os
 import re
@@ -561,4 +561,4 @@ async def on_message(message):
                     secondoffset = 0      
                 await message.channel.send("`Song Skipped`")
                 
-client.loop.run_until_complete(client.start(DEVHALTokenDoc.token))
+client.loop.run_until_complete(client.start(TokenDoc.token))
