@@ -22,7 +22,7 @@ print("Hal is Booting up...")
 
 Startup = datetime.datetime.now()
 CREATOR_ID=653386075095695361
-HAL_ID=779155599622537226
+HAL_ID=663923530626367509
 
 time_message=None
 PREVIOUS_VIDEO=None
