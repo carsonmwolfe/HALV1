@@ -242,7 +242,7 @@ async def on_message(message):
         em.set_footer(text=str(Footer))
         await message.channel.send(embed=em)
         
-    if str(message.content).upper().startswith("!PLAY|"):
+    if str(message.content).upper().startswith("*PLAY|"):
         Leave = False
         skip = False
         pause = False
